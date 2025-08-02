@@ -34,10 +34,7 @@
         .plan-section-content th,
         .plan-section-content td { border: 1px solid #cbd5e1; padding: 0.75rem; text-align: left; }
         .plan-section-content th { background-color: #f1f5f9; font-weight: 600; }
-        .copy-section-btn {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
+        .edit-btn, .copy-section-btn {
             background-color: #e2e8f0;
             color: #475569;
             border: none;
@@ -48,12 +45,26 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        .copy-section-btn:hover { background-color: #cbd5e1; }
+        .edit-btn:hover, .copy-section-btn:hover { background-color: #cbd5e1; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #7A9D54; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .nav-link { padding: 0.5rem 1rem; border-radius: 0.375rem; transition: background-color 0.2s, color 0.2s; }
         .nav-link.active { background-color: #7A9D54; color: white; }
         .nav-link:not(.active):hover { background-color: #f3f4f6; }
+        .school-level-btn {
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        .school-level-btn.active {
+            background-color: #84cc16; /* lime-500 */
+            color: white;
+            border-color: #65a30d; /* lime-600 */
+            font-weight: 600;
+        }
+        .school-level-btn:not(.active) {
+            background-color: #f1f5f9; /* slate-100 */
+            color: #475569; /* slate-600 */
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -129,30 +140,48 @@
                     <div class="flex flex-col lg:flex-row gap-6">
                         <aside class="w-full lg:w-1/3 bg-white p-6 rounded-lg shadow-lg h-fit lg:sticky top-24">
                             <h2 class="text-xl font-bold mb-4 border-b pb-2">1. 계획서 조건 입력</h2>
-                            <form id="plan-form" class="space-y-4" onsubmit="return false;">
+                            <form id="plan-form" onsubmit="return false;">
                                 <div>
-                                    <label for="school-level" class="block text-sm font-medium text-gray-700">학교급</label>
-                                    <select id="school-level" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-green-500 sm:text-sm"></select>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">학교급</label>
+                                    <div id="school-level-buttons" class="grid grid-cols-3 gap-2">
+                                        <button type="button" data-value="유치원" class="school-level-btn py-2 px-3 rounded-md text-sm">유치원</button>
+                                        <button type="button" data-value="초등학교" class="school-level-btn py-2 px-3 rounded-md text-sm active">초등학교</button>
+                                        <button type="button" data-value="중학교" class="school-level-btn py-2 px-3 rounded-md text-sm">중학교</button>
+                                        <button type="button" data-value="고등학교" class="school-level-btn py-2 px-3 rounded-md text-sm">고등학교</button>
+                                        <button type="button" data-value="없음" class="school-level-btn py-2 px-3 rounded-md text-sm">없음</button>
+                                    </div>
                                 </div>
                                 <div>
-                                    <label for="plan-type" class="block text-sm font-medium text-gray-700">계획서 종류</label>
+                                    <label for="plan-type" class="block text-sm font-medium text-gray-700">계획서 주제</label>
                                     <select id="plan-type" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-green-500 sm:text-sm"></select>
+                                    <button type="button" id="custom-topic-btn" class="mt-2 text-sm text-blue-600 hover:underline">직접 입력</button>
+                                    <div id="custom-plan-type-wrapper" class="hidden mt-2">
+                                        <input type="text" id="custom-plan-type" placeholder="계획서 주제를 직접 입력하세요" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 sm:text-sm">
+                                    </div>
                                 </div>
-                                <div id="custom-plan-type-wrapper" class="hidden">
-                                    <label for="custom-plan-type" class="block text-sm font-medium text-gray-700">계획서 종류 직접 입력</label>
-                                    <input type="text" id="custom-plan-type" placeholder="예: 가을 현장체험학습 계획" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 sm:text-sm">
-                                </div>
+                                
                                 <div>
-                                    <label for="keywords" class="block text-sm font-medium text-gray-700">핵심 키워드 (선택)</label>
-                                    <input type="text" id="keywords" placeholder="예: 메타버스, AI 융합, 학생 주도" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 sm:text-sm">
+                                    <label class="block text-sm font-medium text-gray-700">핵심 키워드</label>
+                                    <div id="keywords-container" class="space-y-2 mt-1">
+                                        <div class="flex items-center gap-2">
+                                            <input type="text" name="keywords" class="keyword-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 sm:text-sm" placeholder="예: AI 융합">
+                                        </div>
+                                    </div>
+                                    <button type="button" id="add-keyword-btn" class="mt-2 text-sm text-blue-600 hover:underline flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                        키워드 추가
+                                    </button>
                                 </div>
-                                <div class="flex items-center">
-                                    <input id="include-budget" type="checkbox" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
-                                    <label for="include-budget" class="ml-2 block text-sm text-gray-900">예산 계획 포함</label>
-                                </div>
+
                                 <p id="form-error" class="text-red-500 text-xs italic mt-2 hidden"></p>
                                 <button type="submit" id="generate-btn" class="w-full bg-[#7A9D54] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#6a8a4a] flex items-center justify-center">AI 운영계획서 생성</button>
                             </form>
+                            <div class="mt-8">
+                                <h3 class="text-lg font-bold mb-4 border-b pb-2">최근 생성한 계획서</h3>
+                                <div id="generator-recent-plans" class="space-y-3 max-h-60 overflow-y-auto">
+                                    <!-- Recent plans will be dynamically inserted here -->
+                                </div>
+                            </div>
                         </aside>
                         <section id="output-panel" class="w-full lg:w-2/3">
                             <div id="initial-message" class="bg-white p-8 rounded-lg shadow-lg"><h2 class="text-2xl font-bold text-gray-800">AI 운영계획서 초안이 이곳에 표시됩니다.</h2></div>
@@ -164,10 +193,11 @@
                             
                             <div id="result-section" class="hidden">
                                 <div class="flex justify-between items-center mb-6 bg-white p-6 rounded-lg shadow-lg">
-                                    <h2 id="plan-title" class="text-2xl font-bold text-slate-800"></h2>
-                                    <button id="regenerate-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition">
-                                        새로 만들기
-                                    </button>
+                                    <div class="flex items-center gap-4">
+                                        <h2 id="plan-title" class="text-2xl font-bold text-slate-800"></h2>
+                                        <input type="text" id="plan-title-input" class="hidden text-2xl font-bold text-slate-800 border-b-2 border-blue-500 focus:outline-none">
+                                    </div>
+                                    <button id="edit-title-btn" class="edit-btn">편집</button>
                                 </div>
                                 <div id="generated-plan-container" class="space-y-6">
                                     <!-- Generated sections will be injected here -->
@@ -202,9 +232,6 @@
             appId: "1:704809284946:web:54e4788586e6c68de1768b"
         };
         
-        // Gemini API Key provided by the user
-        const geminiApiKey = "AIzaSyC7_Gq4LIVVMv0hMD6qSwcTlGJcDSt-KgI";
-
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -235,17 +262,21 @@
         const resultSection = document.getElementById('result-section');
         const planContainer = document.getElementById('generated-plan-container');
         const planTitle = document.getElementById('plan-title');
+        const planTitleInput = document.getElementById('plan-title-input');
+        const editTitleBtn = document.getElementById('edit-title-btn');
         const errorMessageDiv = document.getElementById('error-message');
         const errorDetails = document.getElementById('error-details');
-        const regenerateBtn = document.getElementById('regenerate-btn');
         const toast = document.getElementById('toast');
         const outputPanel = document.getElementById('output-panel');
-        const schoolLevelSelect = document.getElementById('school-level');
+        const schoolLevelButtons = document.getElementById('school-level-buttons');
         const planTypeSelect = document.getElementById('plan-type');
+        const customTopicBtn = document.getElementById('custom-topic-btn');
         const customPlanTypeWrapper = document.getElementById('custom-plan-type-wrapper');
         const customPlanTypeInput = document.getElementById('custom-plan-type');
-        const includeBudgetCheckbox = document.getElementById('include-budget');
+        const keywordsContainer = document.getElementById('keywords-container');
+        const addKeywordBtn = document.getElementById('add-keyword-btn');
         const formError = document.getElementById('form-error');
+        const generatorRecentPlans = document.getElementById('generator-recent-plans');
         
         let statsChartInstance = null;
 
@@ -315,7 +346,9 @@
             navDashboard.classList.toggle('active', targetView === 'dashboard');
             navGenerator.classList.toggle('active', targetView === 'generator');
             window.location.hash = targetView;
-            if (targetView === 'dashboard') loadAndDisplayPlans();
+            if (targetView === 'dashboard' || targetView === 'generator') {
+                loadAndDisplayPlans();
+            }
         };
 
         navDashboard.addEventListener('click', (e) => { e.preventDefault(); switchView('dashboard'); });
@@ -403,28 +436,33 @@
                 plans.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
                 updateStatsChart(plans);
 
-                recentPlansList.innerHTML = '';
-                if (plans.length === 0) {
-                    recentPlansList.innerHTML = `<p class="text-gray-500 text-center py-4">아직 생성된 계획서가 없습니다.</p>`;
-                    return;
+                const populateList = (container, planList) => {
+                    container.innerHTML = '';
+                    if (planList.length === 0) {
+                        container.innerHTML = `<p class="text-gray-500 text-center py-4">아직 생성된 계획서가 없습니다.</p>`;
+                        return;
+                    }
+                    planList.forEach((plan) => {
+                        const planElement = document.createElement('div');
+                        planElement.className = 'p-4 border rounded-md hover:bg-gray-50 transition-colors flex justify-between items-center';
+                        planElement.innerHTML = `
+                            <div>
+                                <p class="font-semibold">${plan.title}</p>
+                                <p class="text-sm text-gray-500">생성일: ${plan.createdAt ? new Date(plan.createdAt.toDate()).toLocaleDateString() : '날짜 없음'}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button class="view-plan-btn text-sm font-medium text-blue-600 hover:underline" data-id="${plan.id}">보기</button>
+                                <button class="delete-plan-btn text-sm font-medium text-red-600 hover:underline" data-id="${plan.id}">삭제</button>
+                            </div>
+                        `;
+                        container.appendChild(planElement);
+                    });
+                };
+                
+                populateList(recentPlansList, plans.slice(0, 5));
+                if (generatorRecentPlans) {
+                    populateList(generatorRecentPlans, plans.slice(0, 5));
                 }
-
-                const recent5Plans = plans.slice(0, 5);
-                recent5Plans.forEach((plan) => {
-                    const planElement = document.createElement('div');
-                    planElement.className = 'p-4 border rounded-md hover:bg-gray-50 transition-colors flex justify-between items-center';
-                    planElement.innerHTML = `
-                        <div>
-                            <p class="font-semibold">${plan.title}</p>
-                            <p class="text-sm text-gray-500">생성일: ${plan.createdAt ? new Date(plan.createdAt.toDate()).toLocaleDateString() : '날짜 없음'}</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button class="view-plan-btn text-sm font-medium text-blue-600 hover:underline" data-id="${plan.id}">보기</button>
-                            <button class="delete-plan-btn text-sm font-medium text-red-600 hover:underline" data-id="${plan.id}">삭제</button>
-                        </div>
-                    `;
-                    recentPlansList.appendChild(planElement);
-                });
 
                 document.querySelectorAll('.view-plan-btn').forEach(button => {
                     button.addEventListener('click', async (e) => {
@@ -443,7 +481,6 @@
                 
                 document.querySelectorAll('.delete-plan-btn').forEach(button => {
                     button.addEventListener('click', async (e) => {
-                        if (!confirm('정말로 이 계획서를 삭제하시겠습니까?')) return;
                         const user = auth.currentUser;
                         if (!user) return;
                         try {
@@ -459,6 +496,7 @@
             } catch (error) {
                 console.error("Error loading plans:", error);
                 recentPlansList.innerHTML = `<p class="text-red-500 text-center py-4">계획서를 불러오는 중 오류가 발생했습니다.</p>`;
+                if (generatorRecentPlans) generatorRecentPlans.innerHTML = `<p class="text-red-500 text-center py-4">계획서를 불러오는 중 오류가 발생했습니다.</p>`;
                 updateStatsChart([]);
             }
         };
@@ -466,15 +504,38 @@
         // --- GENERATOR LOGIC ---
         
         const populateSelects = () => {
-            const schoolLevels = ['초등학교', '중학교', '고등학교'];
-            const planTypes = ['초등학교 교육과정 운영계획', '학교폭력 예방 교육 계획', '진로 체험 활동 계획', '디지털 리터러시 교육 계획', '기초학력 향상 지원 계획', '다문화 교육 활동 계획', '직접 입력'];
-            
-            schoolLevelSelect.innerHTML = schoolLevels.map(level => `<option value="${level}">${level}</option>`).join('');
-            planTypeSelect.innerHTML = planTypes.map(type => `<option value="${type === '직접 입력' ? 'custom' : type}">${type}</option>`).join('');
+            const planTypes = ['초등학교 교육과정 운영계획', '학교폭력 예방 교육 계획', '진로 체험 활동 계획', '디지털 리터러시 교육 계획', '기초학력 향상 지원 계획', '다문화 교육 활동 계획'];
+            planTypeSelect.innerHTML = planTypes.map(type => `<option value="${type}">${type}</option>`).join('');
         };
 
-        planTypeSelect.addEventListener('change', () => {
-            customPlanTypeWrapper.classList.toggle('hidden', planTypeSelect.value !== 'custom');
+        schoolLevelButtons.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                schoolLevelButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+            }
+        });
+
+        customTopicBtn.addEventListener('click', () => {
+            customPlanTypeWrapper.classList.toggle('hidden');
+            planTypeSelect.disabled = !customPlanTypeWrapper.classList.contains('hidden');
+        });
+        
+        addKeywordBtn.addEventListener('click', () => {
+            const container = document.createElement('div');
+            container.className = 'flex items-center gap-2';
+            container.innerHTML = `
+                <input type="text" name="keywords" class="keyword-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 sm:text-sm" placeholder="추가 키워드">
+                <button type="button" class="remove-keyword-btn text-red-500 hover:text-red-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>
+                </button>
+            `;
+            keywordsContainer.appendChild(container);
+        });
+
+        keywordsContainer.addEventListener('click', (e) => {
+            if (e.target.closest('.remove-keyword-btn')) {
+                e.target.closest('.flex').remove();
+            }
         });
 
         form.addEventListener('submit', async (e) => {
@@ -484,19 +545,22 @@
             
             formError.classList.add('hidden');
 
-            let planType = planTypeSelect.value;
-            if (planType === 'custom') {
+            let planType;
+            if (!customPlanTypeWrapper.classList.contains('hidden')) {
                 planType = customPlanTypeInput.value.trim();
                 if (!planType) {
-                    formError.textContent = '계획서 종류를 직접 입력해주세요.';
+                    formError.textContent = '계획서 주제를 직접 입력해주세요.';
                     formError.classList.remove('hidden');
                     return;
                 }
+            } else {
+                planType = planTypeSelect.value;
             }
             
-            const schoolLevel = schoolLevelSelect.value;
-            const keywords = document.getElementById('keywords').value.trim() || '없음';
-            const includeBudget = includeBudgetCheckbox.checked;
+            const schoolLevel = schoolLevelButtons.querySelector('.active').dataset.value;
+            const keywords = [...document.querySelectorAll('.keyword-input')]
+                                .map(input => input.value.trim())
+                                .filter(Boolean);
             const currentYear = new Date().getFullYear();
 
             initialMessage.classList.add('hidden');
@@ -518,27 +582,20 @@
 1.  **목적**: 계획의 핵심 목표를 명확하고 간결하게箇条書き(bullet points) 형식으로 제시하세요.
 2.  **운영방침**: 계획을 실행하기 위한 기본 원칙과 방향을 箇条書き 형식으로 제시하세요.
 3.  **세부 운영 계획**: 이 섹션은 반드시 Markdown 테이블 형식으로 작성해야 합니다. 표에는 '구분', '추진 내용', '세부 추진 계획', '시기', '대상' 등의 구체적인 항목을 포함하여 상세하게 작성하세요.
-4.  **예산**: ${includeBudget ? "이 섹션은 '항목', '산출 근거', '예산액(원)', '비고'를 포함한 Markdown 테이블 형식으로 작성해주세요. 실제적인 예산을 편성해야 합니다." : "이 섹션에는 '## 4. 예산\n\n- 해당 없음' 이라고만 작성해주세요."}
+4.  **예산**: 이 섹션은 '항목', '산출 근거', '예산액(원)', '비고'를 포함한 Markdown 테이블 형식으로 작성해주세요. 실제적인 예산을 편성해야 합니다.
 5.  **기대효과**: 계획 실행을 통해 예상되는 긍정적인 결과를 箇条書き 형식으로 구체적으로 서술하세요.
-- **핵심 키워드**: '${keywords}'를 계획서 전반에 자연스럽게 반영해주세요.
+- **핵심 키워드**: '${keywords.join(', ')}'를 계획서 전반에 자연스럽게 반영해주세요.
+- **중요**: 생성하는 모든 텍스트에서 마크다운 굵은 글씨(**)를 사용하지 마세요. 모든 내용은 일반 텍스트로만 작성해주세요.
 `;
 
-                if (planType === '초등학교 교육과정 운영계획') {
-                    prompt += `
----
-**'초등학교 교육과정 운영계획' 작성 시 참고 예시:**
-* **목적 예시:**
-    * 미래 역량 함양 가능한 교육과정 구현으로 포용성과 창의성을 갖춘 자기주도적 미래인재 양성
-    * 2022 개정 교육과정 현장 안착 지원
-* **운영방침 예시:**
-    * 학교 여건 및 교육공동체의 요구를 반영한 자율적 교육과정 편성·운영
-    * 교사 동아리 운영을 통한 수업 나눔 활성화
-`;
-                }
-
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
+                const apiUrl = `/.netlify/functions/generatePlan`;
                 
-                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                const response = await fetch(apiUrl, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ prompt: prompt }) 
+                });
+
                 if (!response.ok) {
                     const err = await response.json();
                     throw new Error(err.error?.message || `API 요청 실패: ${response.status}`);
@@ -555,6 +612,7 @@
                         createdAt: serverTimestamp(),
                         rawContent: rawText
                     });
+                    loadAndDisplayPlans(); // Refresh recent plans list
                     outputPanel.scrollIntoView({ behavior: 'smooth' });
                 } else if (result.candidates?.[0]?.finishReason) {
                      throw new Error(`생성이 중단되었습니다. 이유: ${result.candidates[0].finishReason}. 다른 키워드를 사용해 보세요.`);
@@ -590,30 +648,34 @@
             sections.forEach(sectionText => {
                 const lines = sectionText.trim().split('\n');
                 const sectionTitle = lines.shift().trim();
-                const sectionContent = lines.join('\n').trim();
+                const sectionContentMarkdown = lines.join('\n').trim();
 
                 const sectionDiv = document.createElement('div');
                 sectionDiv.className = 'plan-section';
+                sectionDiv.dataset.markdownContent = sectionContentMarkdown;
                 
                 const titleEl = document.createElement('h3');
                 titleEl.textContent = sectionTitle;
                 
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'plan-section-content';
-
-                if (sectionTitle.includes('예산') && sectionContent.includes('|')) {
-                    contentDiv.innerHTML = renderMarkdownTable(sectionContent);
-                    sectionDiv.dataset.markdownTable = sectionContent; 
-                } else {
-                    contentDiv.innerHTML = markdownToHtml(sectionContent);
-                }
+                contentDiv.innerHTML = parseMarkdown(sectionContentMarkdown);
                 
+                const controlsDiv = document.createElement('div');
+                controlsDiv.className = 'absolute top-4 right-4 flex gap-2';
+
+                const editBtn = document.createElement('button');
+                editBtn.className = 'edit-btn';
+                editBtn.textContent = '편집';
+
                 const copyBtn = document.createElement('button');
                 copyBtn.className = 'copy-section-btn';
                 copyBtn.textContent = '복사';
-                copyBtn.dataset.sectionTitle = sectionTitle;
+                
+                controlsDiv.appendChild(editBtn);
+                controlsDiv.appendChild(copyBtn);
 
-                sectionDiv.appendChild(copyBtn);
+                sectionDiv.appendChild(controlsDiv);
                 sectionDiv.appendChild(titleEl);
                 sectionDiv.appendChild(contentDiv);
                 planContainer.appendChild(sectionDiv);
@@ -621,6 +683,15 @@
 
             loadingIndicator.style.display = 'none';
             resultSection.classList.remove('hidden');
+        }
+
+        function parseMarkdown(markdown) {
+            const plainMarkdown = markdown.replace(/\*\*(.*?)\*\*/g, '$1');
+
+            if (plainMarkdown.includes('|')) {
+                return renderMarkdownTable(plainMarkdown);
+            }
+            return markdownToHtml(plainMarkdown);
         }
 
         function markdownToHtml(markdown) {
@@ -654,8 +725,8 @@
         }
 
         function renderMarkdownTable(markdown) {
-            const rows = markdown.trim().split('\n').map(row => row.split('|').map(cell => cell.trim()).slice(1, -1));
-            if (rows.length < 2) return markdown; 
+            const rows = markdown.trim().split('\n').map(row => row.split('|').map(cell => cell.trim()).filter(Boolean));
+            if (rows.length < 2) return markdownToHtml(markdown); 
 
             const header = rows[0];
             const body = rows.slice(2);
@@ -673,8 +744,8 @@
         }
 
         function markdownTableToHtmlClipboard(markdown) {
-            const rows = markdown.trim().split('\n').map(row => row.split('|').map(cell => cell.trim()).slice(1, -1));
-            if (rows.length < 2) return markdown;
+            const rows = markdown.trim().split('\n').map(row => row.split('|').map(cell => cell.trim()).filter(Boolean));
+             if (rows.length < 2) return markdown;
 
             const header = rows[0];
             const body = rows.slice(2);
@@ -697,7 +768,7 @@
                 e.preventDefault();
                 if (isHtml) {
                     e.clipboardData.setData('text/html', text);
-                    e.clipboardData.setData('text/plain', text.replace(/<[^>]*>?/gm, '')); // Fallback
+                    e.clipboardData.setData('text/plain', text.replace(/<[^>]*>?/gm, ''));
                 } else {
                     e.clipboardData.setData('text/plain', text);
                 }
@@ -717,25 +788,59 @@
         }
 
         planContainer.addEventListener('click', function(e) {
-            if (e.target.classList.contains('copy-section-btn')) {
-                const button = e.target;
-                const sectionDiv = button.closest('.plan-section');
-                const sectionTitle = button.dataset.sectionTitle;
+            const button = e.target.closest('button');
+            if (!button) return;
 
-                if (sectionTitle.includes('예산') && sectionDiv.dataset.markdownTable) {
-                    const markdownTable = sectionDiv.dataset.markdownTable;
-                    const htmlToCopy = markdownTableToHtmlClipboard(markdownTable);
+            const sectionDiv = button.closest('.plan-section');
+            const contentDiv = sectionDiv.querySelector('.plan-section-content');
+
+            if (button.classList.contains('copy-section-btn')) {
+                const markdownContent = sectionDiv.dataset.markdownContent;
+                if (markdownContent.includes('|')) {
+                    const htmlToCopy = markdownTableToHtmlClipboard(markdownContent);
                     copyToClipboard(htmlToCopy, true);
                 } else {
-                    const contentDiv = sectionDiv.querySelector('.plan-section-content');
                     copyToClipboard(contentDiv.innerText, false);
+                }
+            } else if (button.classList.contains('edit-btn')) {
+                if (button.textContent === '편집') { // Start editing
+                    button.textContent = '완료';
+                    button.classList.add('bg-green-500', 'text-white');
+                    const currentMarkdown = sectionDiv.dataset.markdownContent;
+                    const textarea = document.createElement('textarea');
+                    textarea.className = 'w-full h-48 p-2 border rounded-md font-mono text-sm';
+                    textarea.value = currentMarkdown;
+                    contentDiv.replaceWith(textarea);
+                } else { // Finish editing
+                    button.textContent = '편집';
+                    button.classList.remove('bg-green-500', 'text-white');
+                    const textarea = sectionDiv.querySelector('textarea');
+                    const newMarkdown = textarea.value;
+                    sectionDiv.dataset.markdownContent = newMarkdown;
+                    const newContentDiv = document.createElement('div');
+                    newContentDiv.className = 'plan-section-content';
+                    newContentDiv.innerHTML = parseMarkdown(newMarkdown);
+                    textarea.replaceWith(newContentDiv);
                 }
             }
         });
 
-        regenerateBtn.addEventListener('click', () => {
-            resultSection.classList.add('hidden');
-            initialMessage.classList.remove('hidden');
+        editTitleBtn.addEventListener('click', () => {
+            const isEditing = editTitleBtn.textContent === '완료';
+            if (isEditing) {
+                planTitle.textContent = planTitleInput.value;
+                planTitle.classList.remove('hidden');
+                planTitleInput.classList.add('hidden');
+                editTitleBtn.textContent = '편집';
+                editTitleBtn.classList.remove('bg-green-500', 'text-white');
+            } else {
+                planTitleInput.value = planTitle.textContent;
+                planTitle.classList.add('hidden');
+                planTitleInput.classList.remove('hidden');
+                planTitleInput.focus();
+                editTitleBtn.textContent = '완료';
+                editTitleBtn.classList.add('bg-green-500', 'text-white');
+            }
         });
 
         // --- INITIALIZATION ---
