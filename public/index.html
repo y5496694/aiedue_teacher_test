@@ -104,22 +104,26 @@
         <div id="main-app-view" class="hidden flex-col min-h-screen">
             <header class="bg-white shadow-md w-full sticky top-0 z-50">
                 <div class="container mx-auto px-6 py-3 flex justify-between items-center">
-                    <h1 class="text-2xl font-bold text-[#7A9D54]">📝 에이두 티쳐</h1>
+                    <h1 class="text-2xl font-bold text-[#7A9D54]"><a href="#home" id="home-link">📝 에이두 티쳐</a></h1>
                     <nav class="flex items-center gap-4">
                         <span id="user-email" class="text-sm text-gray-600"></span>
-                        <a href="#dashboard" id="nav-dashboard" class="nav-link">대시보드</a>
-                        <a href="#generator" id="nav-generator" class="nav-link">계획서 생성</a>
+                        <a href="#home" id="nav-home" class="nav-link">홈</a>
+                        <a href="#plan" id="nav-plan" class="nav-link">계획서</a>
+                        <a href="#official" id="nav-official" class="nav-link">공문서</a>
+                        <a href="#letter" id="nav-letter" class="nav-link">가정통신문</a>
+                        <a href="#lesson" id="nav-lesson" class="nav-link">교수학습 지도안</a>
+                        <a href="#iep" id="nav-iep" class="nav-link">개별화교육계획</a>
                         <button id="logout-btn" class="text-sm bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded-md transition-colors">로그아웃</button>
                     </nav>
                 </div>
             </header>
             <main class="flex-grow container mx-auto p-6">
-                <!-- Dashboard View -->
-                <div id="dashboard-view">
-                    <h2 class="text-3xl font-bold mb-6">대시보드</h2>
+                <!-- Home View -->
+                <div id="home-view">
+                    <h2 class="text-3xl font-bold mb-6">홈</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
-                            <h3 class="text-xl font-bold mb-2">안녕하세요, <span id="dashboard-user-email"></span> 선생님!</h3>
+                            <h3 class="text-xl font-bold mb-2">안녕하세요, <span id="home-user-email"></span> 선생님!</h3>
                             <p class="text-gray-600 mb-4">에이두 티쳐와 함께라면 학교 운영계획서 작성이 쉬워집니다.</p>
                             <button id="go-to-generator-btn" class="bg-[#7A9D54] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#6a8a4a] transition-colors">새 운영계획서 만들기 →</button>
                         </div>
@@ -135,8 +139,8 @@
                         </div>
                     </div>
                 </div>
-                <!-- Generator View -->
-                <div id="generator-view" class="hidden">
+                <!-- Plan View -->
+                <div id="plan-view" class="hidden">
                     <div class="flex flex-col lg:flex-row gap-6">
                         <aside class="w-full lg:w-1/3 bg-white p-6 rounded-lg shadow-lg h-fit lg:sticky top-24">
                             <h2 class="text-xl font-bold mb-4 border-b pb-2">1. 계획서 조건 입력</h2>
@@ -208,6 +212,26 @@
                         </section>
                     </div>
                 </div>
+                <!-- Official Docs View -->
+                <div id="official-view" class="hidden">
+                    <h2 class="text-3xl font-bold mb-6">공문서</h2>
+                    <p class="text-gray-600">준비 중입니다.</p>
+                </div>
+                <!-- Letter View -->
+                <div id="letter-view" class="hidden">
+                    <h2 class="text-3xl font-bold mb-6">가정통신문</h2>
+                    <p class="text-gray-600">준비 중입니다.</p>
+                </div>
+                <!-- Lesson Plan View -->
+                <div id="lesson-view" class="hidden">
+                    <h2 class="text-3xl font-bold mb-6">교수학습 지도안</h2>
+                    <p class="text-gray-600">준비 중입니다.</p>
+                </div>
+                <!-- IEP View -->
+                <div id="iep-view" class="hidden">
+                    <h2 class="text-3xl font-bold mb-6">개별화교육계획</h2>
+                    <p class="text-gray-600">준비 중입니다.</p>
+                </div>
             </main>
         </div>
         <!-- Toast Message -->
@@ -248,11 +272,20 @@
         const logoutBtn = document.getElementById('logout-btn');
         const authError = document.getElementById('auth-error');
         const userEmailSpan = document.getElementById('user-email');
-        const dashboardUserEmailSpan = document.getElementById('dashboard-user-email');
-        const navDashboard = document.getElementById('nav-dashboard');
-        const navGenerator = document.getElementById('nav-generator');
-        const dashboardView = document.getElementById('dashboard-view');
-        const generatorView = document.getElementById('generator-view');
+        const homeUserEmailSpan = document.getElementById('home-user-email');
+        const navHome = document.getElementById('nav-home');
+        const navPlan = document.getElementById('nav-plan');
+        const navOfficial = document.getElementById('nav-official');
+        const navLetter = document.getElementById('nav-letter');
+        const navLesson = document.getElementById('nav-lesson');
+        const navIep = document.getElementById('nav-iep');
+        const homeLink = document.getElementById('home-link');
+        const homeView = document.getElementById('home-view');
+        const planView = document.getElementById('plan-view');
+        const officialView = document.getElementById('official-view');
+        const letterView = document.getElementById('letter-view');
+        const lessonView = document.getElementById('lesson-view');
+        const iepView = document.getElementById('iep-view');
         const goToGeneratorBtn = document.getElementById('go-to-generator-btn');
         const recentPlansList = document.getElementById('recent-plans-list');
         const form = document.getElementById('plan-form');
@@ -277,7 +310,10 @@
         const addKeywordBtn = document.getElementById('add-keyword-btn');
         const formError = document.getElementById('form-error');
         const generatorRecentPlans = document.getElementById('generator-recent-plans');
-        
+
+        const views = { home: homeView, plan: planView, official: officialView, letter: letterView, lesson: lessonView, iep: iepView };
+        const navLinks = { home: navHome, plan: navPlan, official: navOfficial, letter: navLetter, lesson: navLesson, iep: navIep };
+
         let statsChartInstance = null;
 
         // --- AUTHENTICATION ---
@@ -288,8 +324,8 @@
                 mainAppView.classList.add('flex');
                 const userEmail = user.displayName || user.email;
                 userEmailSpan.textContent = userEmail;
-                dashboardUserEmailSpan.textContent = userEmail;
-                switchView(window.location.hash.substring(1) || 'dashboard');
+                homeUserEmailSpan.textContent = userEmail;
+                switchView(window.location.hash.substring(1) || 'home');
             } else {
                 authView.classList.remove('hidden');
                 mainAppView.classList.add('hidden');
@@ -340,20 +376,25 @@
 
         // --- APP NAVIGATION ---
         const switchView = (view) => {
-            const targetView = view || 'dashboard';
-            dashboardView.classList.toggle('hidden', targetView !== 'dashboard');
-            generatorView.classList.toggle('hidden', targetView !== 'generator');
-            navDashboard.classList.toggle('active', targetView === 'dashboard');
-            navGenerator.classList.toggle('active', targetView === 'generator');
+            const targetView = view || 'home';
+            Object.entries(views).forEach(([key, section]) => {
+                section.classList.toggle('hidden', key !== targetView);
+                navLinks[key].classList.toggle('active', key === targetView);
+            });
             window.location.hash = targetView;
-            if (targetView === 'dashboard' || targetView === 'generator') {
+            if (targetView === 'home' || targetView === 'plan') {
                 loadAndDisplayPlans();
             }
         };
 
-        navDashboard.addEventListener('click', (e) => { e.preventDefault(); switchView('dashboard'); });
-        navGenerator.addEventListener('click', (e) => { e.preventDefault(); switchView('generator'); });
-        goToGeneratorBtn.addEventListener('click', () => switchView('generator'));
+        navHome.addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
+        homeLink.addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
+        navPlan.addEventListener('click', (e) => { e.preventDefault(); switchView('plan'); });
+        navOfficial.addEventListener('click', (e) => { e.preventDefault(); switchView('official'); });
+        navLetter.addEventListener('click', (e) => { e.preventDefault(); switchView('letter'); });
+        navLesson.addEventListener('click', (e) => { e.preventDefault(); switchView('lesson'); });
+        navIep.addEventListener('click', (e) => { e.preventDefault(); switchView('iep'); });
+        goToGeneratorBtn.addEventListener('click', () => switchView('plan'));
 
         // --- CHART LOGIC ---
         const updateStatsChart = (plans) => {
@@ -472,7 +513,7 @@
                         const docSnap = await getDoc(docRef);
                         if (docSnap.exists()) {
                             const planToView = docSnap.data();
-                            switchView('generator');
+                            switchView('plan');
                             displayContent(planToView.rawContent, planToView.title);
                             outputPanel.scrollIntoView({ behavior: 'smooth' });
                         }
