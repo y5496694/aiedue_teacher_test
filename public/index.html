@@ -325,7 +325,7 @@
                 const userEmail = user.displayName || user.email;
                 userEmailSpan.textContent = userEmail;
                 homeUserEmailSpan.textContent = userEmail;
-                switchView(window.location.hash.substring(1) || 'home');
+                switchView('home');
             } else {
                 authView.classList.remove('hidden');
                 mainAppView.classList.add('hidden');
