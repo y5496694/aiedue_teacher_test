@@ -247,13 +247,12 @@
 
                             <!-- Output Section -->
                             <section class="w-full lg:w-2/3">
-                                <div class="bg-white p-6 rounded-lg shadow hidden h-full" id="table-output-section">
-                                    <h3 class="text-lg font-semibold mb-4">출력 테이블</h3>
-                                    <div id="generated-table-container" class="overflow-x-auto mb-4"></div>
-                                    <div class="flex gap-2">
-                                        <button id="edit-table-btn" class="edit-btn">편집</button>
+                                <div class="plan-section hidden" id="table-output-section">
+                                    <div class="absolute top-4 right-4 flex gap-2">
                                         <button id="copy-table-btn" class="copy-section-btn">복사</button>
+                                        <button id="edit-table-btn" class="edit-btn">편집</button>
                                     </div>
+                                    <div id="generated-table-container" class="plan-section-content overflow-x-auto"></div>
                                 </div>
                             </section>
                         </div>
@@ -482,7 +481,7 @@
                     });
                     const result = await response.json();
                     if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
-                        currentTableHtml = result.candidates[0].content.parts[0].text.trim();
+                        currentTableHtml = extractTableFromText(result.candidates[0].content.parts[0].text);
                         generatedTableContainer.innerHTML = currentTableHtml;
                         tableOutputSection.classList.remove('hidden');
                         tableModifySection.classList.remove('hidden');
@@ -508,7 +507,7 @@
                     currentTableHtml = textarea.value;
                     const newDiv = document.createElement('div');
                     newDiv.id = 'generated-table-container';
-                    newDiv.className = 'overflow-x-auto mb-4';
+                    newDiv.className = 'plan-section-content overflow-x-auto';
                     newDiv.innerHTML = currentTableHtml;
                     textarea.replaceWith(newDiv);
                     generatedTableContainer = newDiv;
@@ -537,7 +536,7 @@
                     });
                     const result = await response.json();
                     if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
-                        currentTableHtml = result.candidates[0].content.parts[0].text.trim();
+                        currentTableHtml = extractTableFromText(result.candidates[0].content.parts[0].text);
                         if (isEditingTable) {
                             const textarea = document.getElementById('table-editor');
                             textarea.value = currentTableHtml;
@@ -967,6 +966,16 @@
             });
             tableHtml += '</tbody></table>';
             return tableHtml;
+        }
+
+        function extractTableFromText(text) {
+            text = text.replace(/```(?:html)?/g, '').trim();
+            const tableMatch = text.match(/<table[\s\S]*?<\/table>/i);
+            if (tableMatch) return tableMatch[0];
+            if (text.includes('|')) {
+                return markdownTableToHtmlClipboard(text);
+            }
+            return text;
         }
 
         function copyToClipboard(text, isHtml = false) {
