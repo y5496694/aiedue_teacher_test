@@ -615,6 +615,7 @@
                         generatedLetterContainer.innerHTML = parseMarkdown(currentLetterMarkdown);
                         letterOutputSection.classList.remove('hidden');
                         letterModifySection.classList.remove('hidden');
+                        letterTopic.value = '';
                     }
                 } catch (err) {
                     console.error('Letter Generation Error:', err);
@@ -676,6 +677,7 @@
                         } else {
                             generatedLetterContainer.innerHTML = parseMarkdown(currentLetterMarkdown);
                         }
+                        letterModifyPrompt.value = '';
                     }
                 } catch (err) {
                     console.error('Letter Modify Error:', err);
@@ -1025,20 +1027,33 @@
         function markdownToHtml(markdown) {
             let finalHtml = '';
             let inList = false;
+            let listType = null; // 'ul' or 'ol'
             const lines = markdown.split('\n');
 
             lines.forEach(line => {
                 const trimmedLine = line.trim();
-                if (/^\s*[\*-] /.test(trimmedLine)) {
-                    if (!inList) {
+
+                if (/^\d+\.\s+/.test(trimmedLine)) {
+                    if (!inList || listType !== 'ol') {
+                        if (inList) finalHtml += listType === 'ul' ? '</ul>' : '</ol>';
+                        finalHtml += '<ol>';
+                        inList = true;
+                        listType = 'ol';
+                    }
+                    finalHtml += `<li>${trimmedLine.replace(/^\d+\.\s+/, '')}</li>`;
+                } else if (/^[\*-]\s+/.test(trimmedLine)) {
+                    if (!inList || listType !== 'ul') {
+                        if (inList) finalHtml += listType === 'ul' ? '</ul>' : '</ol>';
                         finalHtml += '<ul>';
                         inList = true;
+                        listType = 'ul';
                     }
-                    finalHtml += `<li>${trimmedLine.replace(/^\s*[\*-] /, '')}</li>`;
+                    finalHtml += `<li>${trimmedLine.replace(/^[\*-]\s+/, '')}</li>`;
                 } else {
                     if (inList) {
-                        finalHtml += '</ul>';
+                        finalHtml += listType === 'ul' ? '</ul>' : '</ol>';
                         inList = false;
+                        listType = null;
                     }
                     if (trimmedLine) {
                         finalHtml += `<p>${trimmedLine}</p>`;
@@ -1047,7 +1062,7 @@
             });
 
             if (inList) {
-                finalHtml += '</ul>';
+                finalHtml += listType === 'ul' ? '</ul>' : '</ol>';
             }
             return finalHtml;
         }
