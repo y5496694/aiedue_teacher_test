@@ -109,6 +109,7 @@
                         <span id="user-email" class="text-sm text-gray-600"></span>
                         <a href="#home" id="nav-home" class="nav-link">홈</a>
                         <a href="#plan" id="nav-plan" class="nav-link">계획서</a>
+                        <a href="#table" id="nav-table" class="nav-link">[한글] 표 만들기</a>
                         <a href="#official" id="nav-official" class="nav-link">공문서</a>
                         <a href="#letter" id="nav-letter" class="nav-link">가정통신문</a>
                         <a href="#lesson" id="nav-lesson" class="nav-link">교수학습 지도안</a>
@@ -213,6 +214,56 @@
                         </section>
                     </div>
                 </div>
+                <!-- Table Generator View -->
+                <div id="table-view" class="hidden">
+                    <div class="container mx-auto p-6 space-y-6">
+                        <h2 class="text-3xl font-bold mb-6">[한글] 표 만들기</h2>
+
+                        <!-- Input Table -->
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h3 class="text-lg font-semibold mb-4">입력 테이블</h3>
+                            <form id="table-form" class="space-y-4">
+                                <div>
+                                    <label for="table-topic" class="block text-sm font-medium text-gray-700">표 주제</label>
+                                    <input type="text" id="table-topic" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="표의 주제를 입력하세요">
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="table-rows" class="block text-sm font-medium text-gray-700">행 수</label>
+                                        <input type="number" id="table-rows" class="mt-1 block w-full border border-gray-300 rounded-md p-2" min="1" value="3">
+                                    </div>
+                                    <div>
+                                        <label for="table-cols" class="block text-sm font-medium text-gray-700">열 수</label>
+                                        <input type="number" id="table-cols" class="mt-1 block w-full border border-gray-300 rounded-md p-2" min="1" value="3">
+                                    </div>
+                                </div>
+                                <button type="submit" id="generate-table-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 표 생성</button>
+                            </form>
+                        </div>
+
+                        <!-- Output Table -->
+                        <div class="bg-white p-6 rounded-lg shadow hidden" id="table-output-section">
+                            <h3 class="text-lg font-semibold mb-4">출력 테이블</h3>
+                            <div id="generated-table-container" class="overflow-x-auto mb-4"></div>
+                            <div class="flex gap-2">
+                                <button id="edit-table-btn" class="edit-btn">편집</button>
+                                <button id="copy-table-btn" class="copy-section-btn">복사</button>
+                            </div>
+                        </div>
+
+                        <!-- AI Modify Table -->
+                        <div class="bg-white p-6 rounded-lg shadow hidden" id="table-modify-section">
+                            <h3 class="text-lg font-semibold mb-4">AI 수정 테이블</h3>
+                            <form id="table-modify-form" class="space-y-4">
+                                <div>
+                                    <label for="table-modify-prompt" class="block text-sm font-medium text-gray-700">수정 내용</label>
+                                    <input type="text" id="table-modify-prompt" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="수정할 내용을 입력하세요">
+                                </div>
+                                <button type="submit" id="modify-table-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 수정 적용</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
                 <!-- Official Docs View -->
                 <div id="official-view" class="hidden">
                     <h2 class="text-3xl font-bold mb-6">공문서</h2>
@@ -276,6 +327,7 @@
         const homeUserEmailSpan = document.getElementById('home-user-email');
         const navHome = document.getElementById('nav-home');
         const navPlan = document.getElementById('nav-plan');
+        const navTable = document.getElementById('nav-table');
         const navOfficial = document.getElementById('nav-official');
         const navLetter = document.getElementById('nav-letter');
         const navLesson = document.getElementById('nav-lesson');
@@ -283,6 +335,7 @@
         const homeLink = document.getElementById('home-link');
         const homeView = document.getElementById('home-view');
         const planView = document.getElementById('plan-view');
+        const tableView = document.getElementById('table-view');
         const officialView = document.getElementById('official-view');
         const letterView = document.getElementById('letter-view');
         const lessonView = document.getElementById('lesson-view');
@@ -312,8 +365,22 @@
         const formError = document.getElementById('form-error');
         const generatorRecentPlans = document.getElementById('generator-recent-plans');
 
-        const views = { home: homeView, plan: planView, official: officialView, letter: letterView, lesson: lessonView, iep: iepView };
-        const navLinks = { home: navHome, plan: navPlan, official: navOfficial, letter: navLetter, lesson: navLesson, iep: navIep };
+        const tableForm = document.getElementById('table-form');
+        const tableTopic = document.getElementById('table-topic');
+        const tableRows = document.getElementById('table-rows');
+        const tableCols = document.getElementById('table-cols');
+        const tableOutputSection = document.getElementById('table-output-section');
+        let generatedTableContainer = document.getElementById('generated-table-container');
+        const editTableBtn = document.getElementById('edit-table-btn');
+        const copyTableBtn = document.getElementById('copy-table-btn');
+        const tableModifySection = document.getElementById('table-modify-section');
+        const tableModifyForm = document.getElementById('table-modify-form');
+        const tableModifyPrompt = document.getElementById('table-modify-prompt');
+        let currentTableMarkdown = '';
+        let isEditingTable = false;
+
+        const views = { home: homeView, plan: planView, table: tableView, official: officialView, letter: letterView, lesson: lessonView, iep: iepView };
+        const navLinks = { home: navHome, plan: navPlan, table: navTable, official: navOfficial, letter: navLetter, lesson: navLesson, iep: navIep };
 
         let statsChartInstance = null;
 
@@ -391,11 +458,100 @@
         navHome.addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
         homeLink.addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
         navPlan.addEventListener('click', (e) => { e.preventDefault(); switchView('plan'); });
+        navTable.addEventListener('click', (e) => { e.preventDefault(); switchView('table'); });
         navOfficial.addEventListener('click', (e) => { e.preventDefault(); switchView('official'); });
         navLetter.addEventListener('click', (e) => { e.preventDefault(); switchView('letter'); });
         navLesson.addEventListener('click', (e) => { e.preventDefault(); switchView('lesson'); });
         navIep.addEventListener('click', (e) => { e.preventDefault(); switchView('iep'); });
         goToGeneratorBtn.addEventListener('click', () => switchView('plan'));
+
+        // --- TABLE GENERATOR LOGIC ---
+        if (tableForm) {
+            tableForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const topic = tableTopic.value.trim();
+                const rows = tableRows.value || 3;
+                const cols = tableCols.value || 3;
+                if (!topic) return;
+
+                const prompt = `다음 조건에 맞는 표를 마크다운 형식으로 작성해줘.\n주제: ${topic}\n행 수: ${rows}\n열 수: ${cols}\n표 외의 다른 설명은 하지마.`;
+                try {
+                    const response = await fetch('/.netlify/functions/generatePlan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt })
+                    });
+                    const result = await response.json();
+                    if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        currentTableMarkdown = result.candidates[0].content.parts[0].text.trim();
+                        generatedTableContainer.innerHTML = renderMarkdownTable(currentTableMarkdown);
+                        tableOutputSection.classList.remove('hidden');
+                        tableModifySection.classList.remove('hidden');
+                    }
+                } catch (err) {
+                    console.error('Table Generation Error:', err);
+                }
+            });
+
+            editTableBtn.addEventListener('click', () => {
+                if (!currentTableMarkdown) return;
+                if (!isEditingTable) {
+                    isEditingTable = true;
+                    editTableBtn.textContent = '완료';
+                    editTableBtn.classList.add('bg-green-500', 'text-white');
+                    const textarea = document.createElement('textarea');
+                    textarea.id = 'table-editor';
+                    textarea.className = 'w-full h-48 p-2 border rounded-md font-mono text-sm';
+                    textarea.value = currentTableMarkdown;
+                    generatedTableContainer.replaceWith(textarea);
+                } else {
+                    const textarea = document.getElementById('table-editor');
+                    currentTableMarkdown = textarea.value;
+                    const newDiv = document.createElement('div');
+                    newDiv.id = 'generated-table-container';
+                    newDiv.className = 'overflow-x-auto mb-4';
+                    newDiv.innerHTML = renderMarkdownTable(currentTableMarkdown);
+                    textarea.replaceWith(newDiv);
+                    generatedTableContainer = newDiv;
+                    isEditingTable = false;
+                    editTableBtn.textContent = '편집';
+                    editTableBtn.classList.remove('bg-green-500', 'text-white');
+                }
+            });
+
+            copyTableBtn.addEventListener('click', () => {
+                if (!currentTableMarkdown) return;
+                const html = markdownTableToHtmlClipboard(currentTableMarkdown);
+                copyToClipboard(html, true);
+            });
+
+            tableModifyForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!currentTableMarkdown) return;
+                const userPrompt = tableModifyPrompt.value.trim();
+                if (!userPrompt) return;
+                const prompt = `다음 마크다운 표를 사용자의 요청에 맞게 수정해줘.\n표:\n${currentTableMarkdown}\n\n요청: ${userPrompt}\n\n수정된 표를 마크다운 표로만 출력해줘.`;
+                try {
+                    const response = await fetch('/.netlify/functions/generatePlan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt })
+                    });
+                    const result = await response.json();
+                    if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        currentTableMarkdown = result.candidates[0].content.parts[0].text.trim();
+                        if (isEditingTable) {
+                            const textarea = document.getElementById('table-editor');
+                            textarea.value = currentTableMarkdown;
+                        } else {
+                            generatedTableContainer.innerHTML = renderMarkdownTable(currentTableMarkdown);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Table Modify Error:', err);
+                }
+            });
+        }
 
         // --- CHART LOGIC ---
         const updateStatsChart = (plans) => {
