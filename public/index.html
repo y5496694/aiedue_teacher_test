@@ -124,9 +124,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
                             <h3 class="text-xl font-bold mb-2">안녕하세요, <span id="home-user-email"></span> 선생님!</h3>
-                            <p class="text-gray-600 mb-4">에이두 티쳐와 함께라면 학교 운영계획서 작성이 쉬워진다.</p>
-                            <p class="text-gray-600 mb-4">학생 중심의 참여적이고 협력적인 교육 활동을 운영한다. 다양한 교육 활동을 통해 학생들의 흥미와 동기를 유발하고 학습 효과를 높인다.</p>
-                            <button id="go-to-generator-btn" class="bg-[#7A9D54] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#6a8a4a] transition-colors">새 운영계획서 만들기 →</button>
+                            <p class="text-gray-600 mb-4">에이두 티쳐와 함께 학교의 업무를 간편히 관리해보세요.</p>
+                            <div class="flex flex-wrap gap-4">
+                                <button id="go-to-generator-btn" class="bg-[#7A9D54] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#6a8a4a] transition-colors">새 운영계획서 생성하기 →</button>
+                                <button id="go-to-table-btn" class="bg-[#7A9D54] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#6a8a4a] transition-colors">[한글] 표 만들기 →</button>
+                            </div>
                         </div>
                         <div class="bg-white p-6 rounded-lg shadow-lg">
                             <h3 class="text-xl font-bold mb-4">생성 통계</h3>
@@ -366,6 +368,7 @@
         const letterView = document.getElementById('letter-view');
         const lessonView = document.getElementById('lesson-view');
         const goToGeneratorBtn = document.getElementById('go-to-generator-btn');
+        const goToTableBtn = document.getElementById('go-to-table-btn');
         const recentPlansList = document.getElementById('recent-plans-list');
         const form = document.getElementById('plan-form');
         const generateBtn = document.getElementById('generate-btn');
@@ -498,6 +501,7 @@
         navLetter.addEventListener('click', (e) => { e.preventDefault(); switchView('letter'); });
         navLesson.addEventListener('click', (e) => { e.preventDefault(); switchView('lesson'); });
         goToGeneratorBtn.addEventListener('click', () => switchView('plan'));
+        goToTableBtn.addEventListener('click', () => switchView('table'));
 
         // --- TABLE GENERATOR LOGIC ---
         if (tableForm) {
