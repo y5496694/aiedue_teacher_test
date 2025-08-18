@@ -717,12 +717,21 @@
                 if (agency || docNumber || date) prompt += `\n근거: ${agency}-${docNumber}(${date})`;
                 if (attachments.length) prompt += `\n첨부파일: ${attachments.join(', ')}`;
                 prompt += `\n형식:\n제목 ${topic}\n1. 관련: [근거]\n2. ${topic}을 반영한 내용`;
-                if (attachments.length) {
-                    prompt += `\n\n붙임 ${attachments.map(a => a + ' 1부.').join(' ')} 끝.`;
+                if (attachments.length > 1) {
+                    const attachmentList = attachments
+                        .map((a, idx) => `${idx + 1}. ${a} 1부.`)
+                        .join('\n      ');
+                    prompt += `\n\n붙임  ${attachmentList} 끝.`;
+                } else if (attachments.length === 1) {
+                    prompt += `\n\n붙임 ${attachments[0]} 1부. 끝.`;
                 } else {
                     prompt += `\n\n끝.`;
                 }
-                prompt += `\n근거 정보가 없으면 '1. 관련:' 항목은 생략하고, 첨부파일이 없으면 붙임 부분은 생략해. 제목은 첫 줄에만 작성해. 추가 설명 없이 마크다운으로 작성해.`;
+                prompt += `\n근거 정보가 없으면 '1. 관련:' 항목은 생략하고, 첨부파일이 없으면 붙임 부분은 생략해.`;
+                if (attachments.length > 1) {
+                    prompt += ` 첨부파일이 여러 개인 경우 번호를 붙여 구분해.`;
+                }
+                prompt += ` 제목은 첫 줄에만 작성해. 추가 설명 없이 마크다운으로 작성해.`;
 
                 try {
                     const response = await fetch('/.netlify/functions/generatePlan', {
