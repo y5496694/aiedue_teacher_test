@@ -261,8 +261,66 @@
                 </div>
                 <!-- Official Docs View -->
                 <div id="official-view" class="hidden">
-                    <h2 class="text-3xl font-bold mb-6">공문서</h2>
-                    <p class="text-gray-600">준비 중입니다.</p>
+                    <div class="container mx-auto p-6">
+                        <h2 class="text-3xl font-bold mb-6">공문서</h2>
+                        <div class="flex flex-col lg:flex-row gap-6">
+                            <!-- Input & Modify Section -->
+                            <aside class="w-full lg:w-1/3 space-y-6">
+                                <div class="bg-white p-6 rounded-lg shadow">
+                                    <h3 class="text-lg font-semibold mb-4">입력 테이블</h3>
+                                    <form id="official-form" class="space-y-4">
+                                        <div>
+                                            <label for="official-topic" class="block text-sm font-medium text-gray-700">주제</label>
+                                            <textarea id="official-topic" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="공문서 주제를 입력하세요" required></textarea>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">근거 (선택)</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <input type="text" id="official-agency" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="관련 기관">
+                                                <input type="text" id="official-doc-number" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="문서 번호">
+                                                <input type="date" id="official-date" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">첨부 파일 (선택)</label>
+                                            <div id="attachments-container" class="space-y-2"></div>
+                                            <button type="button" id="add-attachment-btn" class="mt-2 text-sm text-blue-600 hover:underline">+ 추가</button>
+                                        </div>
+                                        <button type="submit" id="generate-official-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 공문서 생성</button>
+                                    </form>
+                                </div>
+
+                                <!-- AI Modify Table -->
+                                <div class="bg-white p-6 rounded-lg shadow hidden" id="official-modify-section">
+                                    <h3 class="text-lg font-semibold mb-4">AI 수정 테이블</h3>
+                                    <form id="official-modify-form" class="space-y-4">
+                                        <div>
+                                            <label for="official-modify-prompt" class="block text-sm font-medium text-gray-700">수정 내용</label>
+                                            <input type="text" id="official-modify-prompt" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="수정할 내용을 입력하세요">
+                                        </div>
+                                        <button type="submit" id="modify-official-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 수정 적용</button>
+                                    </form>
+                                </div>
+                            </aside>
+
+                            <!-- Output Section -->
+                            <section class="w-full lg:w-2/3">
+                                <div class="plan-section hidden relative" id="official-output-section">
+                                    <div class="absolute top-4 right-4 flex gap-2">
+                                        <button id="copy-official-btn" class="copy-section-btn">복사</button>
+                                        <button id="edit-official-btn" class="edit-btn">편집</button>
+                                    </div>
+                                    <div class="mb-4 flex items-center gap-2">
+                                        <h3 id="official-title" class="text-xl font-bold"></h3>
+                                        <input type="text" id="official-title-input" class="hidden text-xl font-bold border-b border-gray-400 focus:outline-none">
+                                        <button type="button" id="edit-official-title-btn" class="edit-btn">편집</button>
+                                        <button type="button" id="copy-official-title-btn" class="copy-section-btn">복사</button>
+                                    </div>
+                                    <div id="generated-official-container" class="plan-section-content"></div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
                 </div>
                 <!-- Letter View -->
                 <div id="letter-view" class="hidden">
@@ -416,6 +474,28 @@
         const letterModifyPrompt = document.getElementById('letter-modify-prompt');
         let currentLetterMarkdown = '';
         let isEditingLetter = false;
+
+        const officialForm = document.getElementById('official-form');
+        const officialTopic = document.getElementById('official-topic');
+        const officialAgency = document.getElementById('official-agency');
+        const officialDocNumber = document.getElementById('official-doc-number');
+        const officialDate = document.getElementById('official-date');
+        const attachmentsContainer = document.getElementById('attachments-container');
+        const addAttachmentBtn = document.getElementById('add-attachment-btn');
+        const officialOutputSection = document.getElementById('official-output-section');
+        let generatedOfficialContainer = document.getElementById('generated-official-container');
+        const editOfficialBtn = document.getElementById('edit-official-btn');
+        const copyOfficialBtn = document.getElementById('copy-official-btn');
+        const officialModifySection = document.getElementById('official-modify-section');
+        const officialModifyForm = document.getElementById('official-modify-form');
+        const officialModifyPrompt = document.getElementById('official-modify-prompt');
+        const officialTitle = document.getElementById('official-title');
+        const officialTitleInput = document.getElementById('official-title-input');
+        const editOfficialTitleBtn = document.getElementById('edit-official-title-btn');
+        const copyOfficialTitleBtn = document.getElementById('copy-official-title-btn');
+        let currentOfficialTitle = '';
+        let currentOfficialMarkdown = '';
+        let isEditingOfficial = false;
 
         const views = { home: homeView, plan: planView, table: tableView, official: officialView, letter: letterView, lesson: lessonView };
         const navLinks = { home: navHome, plan: navPlan, table: navTable, official: navOfficial, letter: navLetter, lesson: navLesson };
@@ -593,6 +673,170 @@
                     }
                 } catch (err) {
                     console.error('Table Modify Error:', err);
+                }
+            });
+        }
+
+        // --- OFFICIAL DOCUMENT LOGIC ---
+        if (addAttachmentBtn) {
+            const addAttachmentInput = () => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex items-center gap-2';
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.className = 'block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer';
+                const span = document.createElement('span');
+                span.className = 'text-sm text-gray-600';
+                input.addEventListener('change', () => {
+                    span.textContent = input.files[0]?.name || '';
+                });
+                wrapper.appendChild(input);
+                wrapper.appendChild(span);
+                attachmentsContainer.appendChild(wrapper);
+            };
+            addAttachmentBtn.addEventListener('click', addAttachmentInput);
+        }
+
+        if (officialForm) {
+            officialForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const topic = officialTopic.value.trim();
+                if (!topic) return;
+                const agency = officialAgency.value.trim();
+                const docNumber = officialDocNumber.value.trim();
+                let date = officialDate.value.trim();
+                if (date) {
+                    const [y, m, d] = date.split('-');
+                    date = `${y}.${m}.${d}.`;
+                }
+                const attachments = Array.from(attachmentsContainer.querySelectorAll('input[type="file"]'))
+                    .map(input => input.files[0]?.name)
+                    .filter(Boolean);
+
+                let prompt = `다음 정보를 바탕으로 공문서 기안을 작성해줘.\n주제: ${topic}`;
+                if (agency || docNumber || date) prompt += `\n근거: ${agency}-${docNumber}(${date})`;
+                if (attachments.length) prompt += `\n첨부파일: ${attachments.join(', ')}`;
+                prompt += `\n형식:\n제목 ${topic}\n1. 관련: [근거]\n2. ${topic}을 반영한 내용`;
+                if (attachments.length) {
+                    prompt += `\n\n붙임 ${attachments.map(a => a + ' 1부.').join(' ')} 끝.`;
+                } else {
+                    prompt += `\n\n끝.`;
+                }
+                prompt += `\n근거 정보가 없으면 '1. 관련:' 항목은 생략하고, 첨부파일이 없으면 붙임 부분은 생략해. 제목은 첫 줄에만 작성해. 추가 설명 없이 마크다운으로 작성해.`;
+
+                try {
+                    const response = await fetch('/.netlify/functions/generatePlan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt })
+                    });
+                    const result = await response.json();
+                    if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        const fullText = extractMarkdownFromText(result.candidates[0].content.parts[0].text);
+                        const lines = fullText.split('\n');
+                        currentOfficialTitle = lines.shift().trim();
+                        currentOfficialMarkdown = lines.join('\n').trim();
+                        officialTitle.textContent = currentOfficialTitle;
+                        generatedOfficialContainer.innerHTML = parseMarkdown(currentOfficialMarkdown);
+                        officialOutputSection.classList.remove('hidden');
+                        officialModifySection.classList.remove('hidden');
+                        officialTopic.value = '';
+                        officialAgency.value = '';
+                        officialDocNumber.value = '';
+                        officialDate.value = '';
+                        attachmentsContainer.innerHTML = '';
+                    }
+                } catch (err) {
+                    console.error('Official Generation Error:', err);
+                }
+            });
+
+            editOfficialBtn.addEventListener('click', () => {
+                if (!currentOfficialMarkdown) return;
+                if (!isEditingOfficial) {
+                    isEditingOfficial = true;
+                    editOfficialBtn.textContent = '완료';
+                    editOfficialBtn.classList.add('bg-green-500', 'text-white');
+                    const textarea = document.createElement('textarea');
+                    textarea.id = 'official-editor';
+                    textarea.className = 'w-full h-48 p-2 border rounded-md font-mono text-sm';
+                    textarea.value = currentOfficialMarkdown;
+                    generatedOfficialContainer.replaceWith(textarea);
+                } else {
+                    const textarea = document.getElementById('official-editor');
+                    currentOfficialMarkdown = textarea.value;
+                    const newDiv = document.createElement('div');
+                    newDiv.id = 'generated-official-container';
+                    newDiv.className = 'plan-section-content';
+                    newDiv.innerHTML = parseMarkdown(currentOfficialMarkdown);
+                    textarea.replaceWith(newDiv);
+                    generatedOfficialContainer = newDiv;
+                    isEditingOfficial = false;
+                    editOfficialBtn.textContent = '편집';
+                    editOfficialBtn.classList.remove('bg-green-500', 'text-white');
+                }
+            });
+
+            copyOfficialBtn.addEventListener('click', () => {
+                if (!currentOfficialMarkdown && !currentOfficialTitle) return;
+                const htmlToCopy = markdownToHtml(`${currentOfficialTitle}\n${currentOfficialMarkdown}`);
+                copyToClipboard(htmlToCopy, true);
+            });
+
+            editOfficialTitleBtn.addEventListener('click', () => {
+                const isEditing = editOfficialTitleBtn.textContent === '완료';
+                if (isEditing) {
+                    officialTitle.textContent = officialTitleInput.value;
+                    officialTitle.classList.remove('hidden');
+                    officialTitleInput.classList.add('hidden');
+                    editOfficialTitleBtn.textContent = '편집';
+                    editOfficialTitleBtn.classList.remove('bg-green-500', 'text-white');
+                    currentOfficialTitle = officialTitle.textContent;
+                } else {
+                    officialTitleInput.value = officialTitle.textContent;
+                    officialTitle.classList.add('hidden');
+                    officialTitleInput.classList.remove('hidden');
+                    officialTitleInput.focus();
+                    editOfficialTitleBtn.textContent = '완료';
+                    editOfficialTitleBtn.classList.add('bg-green-500', 'text-white');
+                }
+            });
+
+            copyOfficialTitleBtn.addEventListener('click', () => {
+                if (!officialTitle.textContent) return;
+                copyToClipboard(officialTitle.textContent);
+            });
+
+            officialModifyForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!currentOfficialMarkdown && !currentOfficialTitle) return;
+                const userPrompt = officialModifyPrompt.value.trim();
+                if (!userPrompt) return;
+                const currentContent = `${currentOfficialTitle}\n${currentOfficialMarkdown}`;
+                const prompt = `다음 공문서 기안을 사용자의 요청에 맞게 수정해줘.\n공문서:\n${currentContent}\n\n요청: ${userPrompt}\n\n수정된 공문서를 동일한 형식(첫 줄은 제목)으로 마크다운으로 출력해줘.`;
+                try {
+                    const response = await fetch('/.netlify/functions/generatePlan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt })
+                    });
+                    const result = await response.json();
+                    if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        const fullText = extractMarkdownFromText(result.candidates[0].content.parts[0].text);
+                        const lines = fullText.split('\n');
+                        currentOfficialTitle = lines.shift().trim();
+                        currentOfficialMarkdown = lines.join('\n').trim();
+                        officialTitle.textContent = currentOfficialTitle;
+                        if (isEditingOfficial) {
+                            const textarea = document.getElementById('official-editor');
+                            textarea.value = currentOfficialMarkdown;
+                        } else {
+                            generatedOfficialContainer.innerHTML = parseMarkdown(currentOfficialMarkdown);
+                        }
+                        officialModifyPrompt.value = '';
+                    }
+                } catch (err) {
+                    console.error('Official Modify Error:', err);
                 }
             });
         }
