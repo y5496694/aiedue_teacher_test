@@ -216,51 +216,46 @@
                 </div>
                 <!-- Table Generator View -->
                 <div id="table-view" class="hidden">
-                    <div class="container mx-auto p-6 space-y-6">
+                    <div class="container mx-auto p-6">
                         <h2 class="text-3xl font-bold mb-6">[한글] 표 만들기</h2>
-
-                        <!-- Input Table -->
-                        <div class="bg-white p-6 rounded-lg shadow">
-                            <h3 class="text-lg font-semibold mb-4">입력 테이블</h3>
-                            <form id="table-form" class="space-y-4">
-                                <div>
-                                    <label for="table-topic" class="block text-sm font-medium text-gray-700">표 주제</label>
-                                    <input type="text" id="table-topic" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="표의 주제를 입력하세요">
+                        <div class="flex flex-col lg:flex-row gap-6">
+                            <!-- Input & Modify Section -->
+                            <aside class="w-full lg:w-1/3 space-y-6">
+                                <div class="bg-white p-6 rounded-lg shadow">
+                                    <h3 class="text-lg font-semibold mb-4">입력 테이블</h3>
+                                    <form id="table-form" class="space-y-4">
+                                        <div>
+                                            <label for="table-topic" class="block text-sm font-medium text-gray-700">표 주제</label>
+                                            <textarea id="table-topic" rows="4" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="표의 주제를 입력하세요"></textarea>
+                                        </div>
+                                        <button type="submit" id="generate-table-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 표 생성</button>
+                                    </form>
                                 </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="table-rows" class="block text-sm font-medium text-gray-700">행 수</label>
-                                        <input type="number" id="table-rows" class="mt-1 block w-full border border-gray-300 rounded-md p-2" min="1" value="3">
+
+                                <!-- AI Modify Table -->
+                                <div class="bg-white p-6 rounded-lg shadow hidden" id="table-modify-section">
+                                    <h3 class="text-lg font-semibold mb-4">AI 수정 테이블</h3>
+                                    <form id="table-modify-form" class="space-y-4">
+                                        <div>
+                                            <label for="table-modify-prompt" class="block text-sm font-medium text-gray-700">수정 내용</label>
+                                            <input type="text" id="table-modify-prompt" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="수정할 내용을 입력하세요">
+                                        </div>
+                                        <button type="submit" id="modify-table-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 수정 적용</button>
+                                    </form>
+                                </div>
+                            </aside>
+
+                            <!-- Output Section -->
+                            <section class="w-full lg:w-2/3">
+                                <div class="bg-white p-6 rounded-lg shadow hidden h-full" id="table-output-section">
+                                    <h3 class="text-lg font-semibold mb-4">출력 테이블</h3>
+                                    <div id="generated-table-container" class="overflow-x-auto mb-4"></div>
+                                    <div class="flex gap-2">
+                                        <button id="edit-table-btn" class="edit-btn">편집</button>
+                                        <button id="copy-table-btn" class="copy-section-btn">복사</button>
                                     </div>
-                                    <div>
-                                        <label for="table-cols" class="block text-sm font-medium text-gray-700">열 수</label>
-                                        <input type="number" id="table-cols" class="mt-1 block w-full border border-gray-300 rounded-md p-2" min="1" value="3">
-                                    </div>
                                 </div>
-                                <button type="submit" id="generate-table-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 표 생성</button>
-                            </form>
-                        </div>
-
-                        <!-- Output Table -->
-                        <div class="bg-white p-6 rounded-lg shadow hidden" id="table-output-section">
-                            <h3 class="text-lg font-semibold mb-4">출력 테이블</h3>
-                            <div id="generated-table-container" class="overflow-x-auto mb-4"></div>
-                            <div class="flex gap-2">
-                                <button id="edit-table-btn" class="edit-btn">편집</button>
-                                <button id="copy-table-btn" class="copy-section-btn">복사</button>
-                            </div>
-                        </div>
-
-                        <!-- AI Modify Table -->
-                        <div class="bg-white p-6 rounded-lg shadow hidden" id="table-modify-section">
-                            <h3 class="text-lg font-semibold mb-4">AI 수정 테이블</h3>
-                            <form id="table-modify-form" class="space-y-4">
-                                <div>
-                                    <label for="table-modify-prompt" class="block text-sm font-medium text-gray-700">수정 내용</label>
-                                    <input type="text" id="table-modify-prompt" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="수정할 내용을 입력하세요">
-                                </div>
-                                <button type="submit" id="modify-table-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 수정 적용</button>
-                            </form>
+                            </section>
                         </div>
                     </div>
                 </div>
@@ -367,8 +362,6 @@
 
         const tableForm = document.getElementById('table-form');
         const tableTopic = document.getElementById('table-topic');
-        const tableRows = document.getElementById('table-rows');
-        const tableCols = document.getElementById('table-cols');
         const tableOutputSection = document.getElementById('table-output-section');
         let generatedTableContainer = document.getElementById('generated-table-container');
         const editTableBtn = document.getElementById('edit-table-btn');
@@ -376,7 +369,7 @@
         const tableModifySection = document.getElementById('table-modify-section');
         const tableModifyForm = document.getElementById('table-modify-form');
         const tableModifyPrompt = document.getElementById('table-modify-prompt');
-        let currentTableMarkdown = '';
+        let currentTableHtml = '';
         let isEditingTable = false;
 
         const views = { home: homeView, plan: planView, table: tableView, official: officialView, letter: letterView, lesson: lessonView, iep: iepView };
@@ -469,12 +462,18 @@
         if (tableForm) {
             tableForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const topic = tableTopic.value.trim();
-                const rows = tableRows.value || 3;
-                const cols = tableCols.value || 3;
+                let topic = tableTopic.value.trim();
+                const rowMatch = topic.match(/\[행\]\s*(\d+)/);
+                const colMatch = topic.match(/\[열\]\s*(\d+)/);
+                const rows = rowMatch ? rowMatch[1] : null;
+                const cols = colMatch ? colMatch[1] : null;
+                topic = topic.replace(/\[행\]\s*\d+/, '').replace(/\[열\]\s*\d+/, '').trim();
                 if (!topic) return;
 
-                const prompt = `다음 조건에 맞는 표를 마크다운 형식으로 작성해줘.\n주제: ${topic}\n행 수: ${rows}\n열 수: ${cols}\n표 외의 다른 설명은 하지마.`;
+                let prompt = `다음 조건에 맞는 표를 HTML 형식으로 작성해줘.\n주제: ${topic}`;
+                if (rows) prompt += `\n행 수: ${rows}`;
+                if (cols) prompt += `\n열 수: ${cols}`;
+                prompt += `\n<table>과 <th>, <td>에 border:1px solid black; border-collapse:collapse 스타일을 적용해줘.\n추가 설명 없이 표만 출력해.`;
                 try {
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
@@ -483,8 +482,8 @@
                     });
                     const result = await response.json();
                     if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
-                        currentTableMarkdown = result.candidates[0].content.parts[0].text.trim();
-                        generatedTableContainer.innerHTML = renderMarkdownTable(currentTableMarkdown);
+                        currentTableHtml = result.candidates[0].content.parts[0].text.trim();
+                        generatedTableContainer.innerHTML = currentTableHtml;
                         tableOutputSection.classList.remove('hidden');
                         tableModifySection.classList.remove('hidden');
                     }
@@ -494,7 +493,7 @@
             });
 
             editTableBtn.addEventListener('click', () => {
-                if (!currentTableMarkdown) return;
+                if (!currentTableHtml) return;
                 if (!isEditingTable) {
                     isEditingTable = true;
                     editTableBtn.textContent = '완료';
@@ -502,15 +501,15 @@
                     const textarea = document.createElement('textarea');
                     textarea.id = 'table-editor';
                     textarea.className = 'w-full h-48 p-2 border rounded-md font-mono text-sm';
-                    textarea.value = currentTableMarkdown;
+                    textarea.value = currentTableHtml;
                     generatedTableContainer.replaceWith(textarea);
                 } else {
                     const textarea = document.getElementById('table-editor');
-                    currentTableMarkdown = textarea.value;
+                    currentTableHtml = textarea.value;
                     const newDiv = document.createElement('div');
                     newDiv.id = 'generated-table-container';
                     newDiv.className = 'overflow-x-auto mb-4';
-                    newDiv.innerHTML = renderMarkdownTable(currentTableMarkdown);
+                    newDiv.innerHTML = currentTableHtml;
                     textarea.replaceWith(newDiv);
                     generatedTableContainer = newDiv;
                     isEditingTable = false;
@@ -520,17 +519,16 @@
             });
 
             copyTableBtn.addEventListener('click', () => {
-                if (!currentTableMarkdown) return;
-                const html = markdownTableToHtmlClipboard(currentTableMarkdown);
-                copyToClipboard(html, true);
+                if (!currentTableHtml) return;
+                copyToClipboard(currentTableHtml, true);
             });
 
             tableModifyForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                if (!currentTableMarkdown) return;
+                if (!currentTableHtml) return;
                 const userPrompt = tableModifyPrompt.value.trim();
                 if (!userPrompt) return;
-                const prompt = `다음 마크다운 표를 사용자의 요청에 맞게 수정해줘.\n표:\n${currentTableMarkdown}\n\n요청: ${userPrompt}\n\n수정된 표를 마크다운 표로만 출력해줘.`;
+                const prompt = `다음 HTML 표를 사용자의 요청에 맞게 수정해줘.\n표:\n${currentTableHtml}\n\n요청: ${userPrompt}\n\n수정된 표를 HTML 표로만 출력해줘. <table>과 <th>, <td>에 border:1px solid black; border-collapse:collapse 스타일을 포함해.`;
                 try {
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
@@ -539,12 +537,12 @@
                     });
                     const result = await response.json();
                     if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
-                        currentTableMarkdown = result.candidates[0].content.parts[0].text.trim();
+                        currentTableHtml = result.candidates[0].content.parts[0].text.trim();
                         if (isEditingTable) {
                             const textarea = document.getElementById('table-editor');
-                            textarea.value = currentTableMarkdown;
+                            textarea.value = currentTableHtml;
                         } else {
-                            generatedTableContainer.innerHTML = renderMarkdownTable(currentTableMarkdown);
+                            generatedTableContainer.innerHTML = currentTableHtml;
                         }
                     }
                 } catch (err) {
