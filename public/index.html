@@ -113,7 +113,6 @@
                         <a href="#official" id="nav-official" class="nav-link">공문서</a>
                         <a href="#letter" id="nav-letter" class="nav-link">가정통신문</a>
                         <a href="#lesson" id="nav-lesson" class="nav-link">교수학습 지도안</a>
-                        <a href="#iep" id="nav-iep" class="nav-link">개별화교육계획</a>
                         <button id="logout-btn" class="text-sm bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded-md transition-colors">로그아웃</button>
                     </nav>
                 </div>
@@ -265,17 +264,51 @@
                 </div>
                 <!-- Letter View -->
                 <div id="letter-view" class="hidden">
-                    <h2 class="text-3xl font-bold mb-6">가정통신문</h2>
-                    <p class="text-gray-600">준비 중입니다.</p>
+                    <div class="container mx-auto p-6">
+                        <h2 class="text-3xl font-bold mb-6">가정통신문</h2>
+                        <div class="flex flex-col lg:flex-row gap-6">
+                            <!-- Input & Modify Section -->
+                            <aside class="w-full lg:w-1/3 space-y-6">
+                                <div class="bg-white p-6 rounded-lg shadow">
+                                    <h3 class="text-lg font-semibold mb-4">입력 테이블</h3>
+                                    <form id="letter-form" class="space-y-4">
+                                        <div>
+                                            <label for="letter-topic" class="block text-sm font-medium text-gray-700">주제</label>
+                                            <textarea id="letter-topic" rows="4" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="가정통신문 주제를 입력하세요"></textarea>
+                                        </div>
+                                        <button type="submit" id="generate-letter-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 가정통신문 생성</button>
+                                    </form>
+                                </div>
+
+                                <!-- AI Modify Table -->
+                                <div class="bg-white p-6 rounded-lg shadow hidden" id="letter-modify-section">
+                                    <h3 class="text-lg font-semibold mb-4">AI 수정 테이블</h3>
+                                    <form id="letter-modify-form" class="space-y-4">
+                                        <div>
+                                            <label for="letter-modify-prompt" class="block text-sm font-medium text-gray-700">수정 내용</label>
+                                            <input type="text" id="letter-modify-prompt" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="수정할 내용을 입력하세요">
+                                        </div>
+                                        <button type="submit" id="modify-letter-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 수정 적용</button>
+                                    </form>
+                                </div>
+                            </aside>
+
+                            <!-- Output Section -->
+                            <section class="w-full lg:w-2/3">
+                                <div class="plan-section hidden" id="letter-output-section">
+                                    <div class="absolute top-4 right-4 flex gap-2">
+                                        <button id="copy-letter-btn" class="copy-section-btn">복사</button>
+                                        <button id="edit-letter-btn" class="edit-btn">편집</button>
+                                    </div>
+                                    <div id="generated-letter-container" class="plan-section-content"></div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
                 </div>
                 <!-- Lesson Plan View -->
                 <div id="lesson-view" class="hidden">
                     <h2 class="text-3xl font-bold mb-6">교수학습 지도안</h2>
-                    <p class="text-gray-600">준비 중입니다.</p>
-                </div>
-                <!-- IEP View -->
-                <div id="iep-view" class="hidden">
-                    <h2 class="text-3xl font-bold mb-6">개별화교육계획</h2>
                     <p class="text-gray-600">준비 중입니다.</p>
                 </div>
             </main>
@@ -325,7 +358,6 @@
         const navOfficial = document.getElementById('nav-official');
         const navLetter = document.getElementById('nav-letter');
         const navLesson = document.getElementById('nav-lesson');
-        const navIep = document.getElementById('nav-iep');
         const homeLink = document.getElementById('home-link');
         const homeView = document.getElementById('home-view');
         const planView = document.getElementById('plan-view');
@@ -333,7 +365,6 @@
         const officialView = document.getElementById('official-view');
         const letterView = document.getElementById('letter-view');
         const lessonView = document.getElementById('lesson-view');
-        const iepView = document.getElementById('iep-view');
         const goToGeneratorBtn = document.getElementById('go-to-generator-btn');
         const recentPlansList = document.getElementById('recent-plans-list');
         const form = document.getElementById('plan-form');
@@ -368,11 +399,23 @@
         const tableModifySection = document.getElementById('table-modify-section');
         const tableModifyForm = document.getElementById('table-modify-form');
         const tableModifyPrompt = document.getElementById('table-modify-prompt');
-        let currentTableHtml = '';
+        let currentTableMarkdown = '';
         let isEditingTable = false;
 
-        const views = { home: homeView, plan: planView, table: tableView, official: officialView, letter: letterView, lesson: lessonView, iep: iepView };
-        const navLinks = { home: navHome, plan: navPlan, table: navTable, official: navOfficial, letter: navLetter, lesson: navLesson, iep: navIep };
+        const letterForm = document.getElementById('letter-form');
+        const letterTopic = document.getElementById('letter-topic');
+        const letterOutputSection = document.getElementById('letter-output-section');
+        let generatedLetterContainer = document.getElementById('generated-letter-container');
+        const editLetterBtn = document.getElementById('edit-letter-btn');
+        const copyLetterBtn = document.getElementById('copy-letter-btn');
+        const letterModifySection = document.getElementById('letter-modify-section');
+        const letterModifyForm = document.getElementById('letter-modify-form');
+        const letterModifyPrompt = document.getElementById('letter-modify-prompt');
+        let currentLetterMarkdown = '';
+        let isEditingLetter = false;
+
+        const views = { home: homeView, plan: planView, table: tableView, official: officialView, letter: letterView, lesson: lessonView };
+        const navLinks = { home: navHome, plan: navPlan, table: navTable, official: navOfficial, letter: navLetter, lesson: navLesson };
 
         let statsChartInstance = null;
 
@@ -454,7 +497,6 @@
         navOfficial.addEventListener('click', (e) => { e.preventDefault(); switchView('official'); });
         navLetter.addEventListener('click', (e) => { e.preventDefault(); switchView('letter'); });
         navLesson.addEventListener('click', (e) => { e.preventDefault(); switchView('lesson'); });
-        navIep.addEventListener('click', (e) => { e.preventDefault(); switchView('iep'); });
         goToGeneratorBtn.addEventListener('click', () => switchView('plan'));
 
         // --- TABLE GENERATOR LOGIC ---
@@ -469,10 +511,10 @@
                 topic = topic.replace(/\[행\]\s*\d+/, '').replace(/\[열\]\s*\d+/, '').trim();
                 if (!topic) return;
 
-                let prompt = `다음 조건에 맞는 표를 HTML 형식으로 작성해줘.\n주제: ${topic}`;
+                let prompt = `다음 조건에 맞는 표를 마크다운 형식으로 작성해줘.\n주제: ${topic}`;
                 if (rows) prompt += `\n행 수: ${rows}`;
                 if (cols) prompt += `\n열 수: ${cols}`;
-                prompt += `\n<table>과 <th>, <td>에 border:1px solid black; border-collapse:collapse 스타일을 적용해줘.\n추가 설명 없이 표만 출력해.`;
+                prompt += `\n추가 설명 없이 표만 출력해.`;
                 try {
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
@@ -481,8 +523,8 @@
                     });
                     const result = await response.json();
                     if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
-                        currentTableHtml = extractTableFromText(result.candidates[0].content.parts[0].text);
-                        generatedTableContainer.innerHTML = currentTableHtml;
+                        currentTableMarkdown = extractMarkdownFromText(result.candidates[0].content.parts[0].text);
+                        generatedTableContainer.innerHTML = renderMarkdownTable(currentTableMarkdown);
                         tableOutputSection.classList.remove('hidden');
                         tableModifySection.classList.remove('hidden');
                     }
@@ -492,7 +534,7 @@
             });
 
             editTableBtn.addEventListener('click', () => {
-                if (!currentTableHtml) return;
+                if (!currentTableMarkdown) return;
                 if (!isEditingTable) {
                     isEditingTable = true;
                     editTableBtn.textContent = '완료';
@@ -500,15 +542,15 @@
                     const textarea = document.createElement('textarea');
                     textarea.id = 'table-editor';
                     textarea.className = 'w-full h-48 p-2 border rounded-md font-mono text-sm';
-                    textarea.value = currentTableHtml;
+                    textarea.value = currentTableMarkdown;
                     generatedTableContainer.replaceWith(textarea);
                 } else {
                     const textarea = document.getElementById('table-editor');
-                    currentTableHtml = textarea.value;
+                    currentTableMarkdown = textarea.value;
                     const newDiv = document.createElement('div');
                     newDiv.id = 'generated-table-container';
                     newDiv.className = 'plan-section-content overflow-x-auto';
-                    newDiv.innerHTML = currentTableHtml;
+                    newDiv.innerHTML = renderMarkdownTable(currentTableMarkdown);
                     textarea.replaceWith(newDiv);
                     generatedTableContainer = newDiv;
                     isEditingTable = false;
@@ -518,16 +560,17 @@
             });
 
             copyTableBtn.addEventListener('click', () => {
-                if (!currentTableHtml) return;
-                copyToClipboard(currentTableHtml, true);
+                if (!currentTableMarkdown) return;
+                const htmlToCopy = markdownTableToHtmlClipboard(currentTableMarkdown);
+                copyToClipboard(htmlToCopy, true);
             });
 
             tableModifyForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                if (!currentTableHtml) return;
+                if (!currentTableMarkdown) return;
                 const userPrompt = tableModifyPrompt.value.trim();
                 if (!userPrompt) return;
-                const prompt = `다음 HTML 표를 사용자의 요청에 맞게 수정해줘.\n표:\n${currentTableHtml}\n\n요청: ${userPrompt}\n\n수정된 표를 HTML 표로만 출력해줘. <table>과 <th>, <td>에 border:1px solid black; border-collapse:collapse 스타일을 포함해.`;
+                const prompt = `다음 마크다운 표를 사용자의 요청에 맞게 수정해줘.\n표:\n${currentTableMarkdown}\n\n요청: ${userPrompt}\n\n수정된 표를 마크다운 표로만 출력해줘.`;
                 try {
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
@@ -536,16 +579,102 @@
                     });
                     const result = await response.json();
                     if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
-                        currentTableHtml = extractTableFromText(result.candidates[0].content.parts[0].text);
+                        currentTableMarkdown = extractMarkdownFromText(result.candidates[0].content.parts[0].text);
                         if (isEditingTable) {
                             const textarea = document.getElementById('table-editor');
-                            textarea.value = currentTableHtml;
+                            textarea.value = currentTableMarkdown;
                         } else {
-                            generatedTableContainer.innerHTML = currentTableHtml;
+                            generatedTableContainer.innerHTML = renderMarkdownTable(currentTableMarkdown);
                         }
                     }
                 } catch (err) {
                     console.error('Table Modify Error:', err);
+                }
+            });
+        }
+
+        if (letterForm) {
+            letterForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const topic = letterTopic.value.trim();
+                if (!topic) return;
+                const prompt = `다음 주제로 가정통신문을 마크다운 형식으로 작성해줘.\n주제: ${topic}\n추가 설명 없이 내용만 출력해.`;
+                try {
+                    const response = await fetch('/.netlify/functions/generatePlan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt })
+                    });
+                    const result = await response.json();
+                    if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        currentLetterMarkdown = extractMarkdownFromText(result.candidates[0].content.parts[0].text);
+                        generatedLetterContainer.innerHTML = parseMarkdown(currentLetterMarkdown);
+                        letterOutputSection.classList.remove('hidden');
+                        letterModifySection.classList.remove('hidden');
+                    }
+                } catch (err) {
+                    console.error('Letter Generation Error:', err);
+                }
+            });
+
+            editLetterBtn.addEventListener('click', () => {
+                if (!currentLetterMarkdown) return;
+                if (!isEditingLetter) {
+                    isEditingLetter = true;
+                    editLetterBtn.textContent = '완료';
+                    editLetterBtn.classList.add('bg-green-500', 'text-white');
+                    const textarea = document.createElement('textarea');
+                    textarea.id = 'letter-editor';
+                    textarea.className = 'w-full h-48 p-2 border rounded-md font-mono text-sm';
+                    textarea.value = currentLetterMarkdown;
+                    generatedLetterContainer.replaceWith(textarea);
+                } else {
+                    const textarea = document.getElementById('letter-editor');
+                    currentLetterMarkdown = textarea.value;
+                    const newDiv = document.createElement('div');
+                    newDiv.id = 'generated-letter-container';
+                    newDiv.className = 'plan-section-content';
+                    newDiv.innerHTML = parseMarkdown(currentLetterMarkdown);
+                    textarea.replaceWith(newDiv);
+                    generatedLetterContainer = newDiv;
+                    isEditingLetter = false;
+                    editLetterBtn.textContent = '편집';
+                    editLetterBtn.classList.remove('bg-green-500', 'text-white');
+                }
+            });
+
+            copyLetterBtn.addEventListener('click', () => {
+                if (!currentLetterMarkdown) return;
+                const htmlToCopy = currentLetterMarkdown.includes('|') ?
+                    markdownTableToHtmlClipboard(currentLetterMarkdown) :
+                    markdownToHtml(currentLetterMarkdown);
+                copyToClipboard(htmlToCopy, true);
+            });
+
+            letterModifyForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!currentLetterMarkdown) return;
+                const userPrompt = letterModifyPrompt.value.trim();
+                if (!userPrompt) return;
+                const prompt = `다음 가정통신문을 사용자의 요청에 맞게 수정해줘.\n내용:\n${currentLetterMarkdown}\n\n요청: ${userPrompt}\n\n수정된 가정통신문을 마크다운 형식으로 출력해줘.`;
+                try {
+                    const response = await fetch('/.netlify/functions/generatePlan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt })
+                    });
+                    const result = await response.json();
+                    if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        currentLetterMarkdown = extractMarkdownFromText(result.candidates[0].content.parts[0].text);
+                        if (isEditingLetter) {
+                            const textarea = document.getElementById('letter-editor');
+                            textarea.value = currentLetterMarkdown;
+                        } else {
+                            generatedLetterContainer.innerHTML = parseMarkdown(currentLetterMarkdown);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Letter Modify Error:', err);
                 }
             });
         }
@@ -968,14 +1097,8 @@
             return tableHtml;
         }
 
-        function extractTableFromText(text) {
-            text = text.replace(/```(?:html)?/g, '').trim();
-            const tableMatch = text.match(/<table[\s\S]*?<\/table>/i);
-            if (tableMatch) return tableMatch[0];
-            if (text.includes('|')) {
-                return markdownTableToHtmlClipboard(text);
-            }
-            return text;
+        function extractMarkdownFromText(text) {
+            return text.replace(/```(?:html|markdown|md)?/g, '').trim();
         }
 
         function copyToClipboard(text, isHtml = false) {
