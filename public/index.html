@@ -390,7 +390,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, getDocs, doc, getDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, getDocs, doc, getDoc, deleteDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -458,6 +458,7 @@
         const addKeywordBtn = document.getElementById('add-keyword-btn');
         const formError = document.getElementById('form-error');
         const generatorRecentPlans = document.getElementById('generator-recent-plans');
+        let currentPlanId = null;
 
         const tableForm = document.getElementById('table-form');
         const tableTopic = document.getElementById('table-topic');
@@ -471,6 +472,7 @@
         const tableSavedList = document.getElementById('table-saved-list');
         let currentTableMarkdown = '';
         let isEditingTable = false;
+        let currentTableId = null;
 
         const letterForm = document.getElementById('letter-form');
         const letterTopic = document.getElementById('letter-topic');
@@ -484,6 +486,7 @@
         const letterSavedList = document.getElementById('letter-saved-list');
         let currentLetterMarkdown = '';
         let isEditingLetter = false;
+        let currentLetterId = null;
 
         const officialForm = document.getElementById('official-form');
         const officialTopic = document.getElementById('official-topic');
@@ -505,6 +508,7 @@
         let currentOfficialTitle = '';
         let currentOfficialMarkdown = '';
         let isEditingOfficial = false;
+        let currentOfficialId = null;
 
         const views = { home: homeView, plan: planView, table: tableView, official: officialView, letter: letterView, lesson: lessonView };
         const navLinks = { home: navHome, plan: navPlan, table: navTable, official: navOfficial, letter: navLetter, lesson: navLesson };
@@ -631,11 +635,12 @@
                         generatedTableContainer.innerHTML = renderMarkdownTable(currentTableMarkdown);
                         tableOutputSection.classList.remove('hidden');
                         tableModifySection.classList.remove('hidden');
-                        await addDoc(collection(db, "users", user.uid, "tables"), {
+                        const docRef = await addDoc(collection(db, "users", user.uid, "tables"), {
                             title: topic,
                             createdAt: serverTimestamp(),
                             rawContent: currentTableMarkdown
                         });
+                        currentTableId = docRef.id;
                         loadAndDisplayItems('tables', tableSavedList, viewTable);
                     }
                 } catch (err) {
@@ -666,6 +671,7 @@
                     isEditingTable = false;
                     editTableBtn.textContent = '편집';
                     editTableBtn.classList.remove('bg-green-500', 'text-white');
+                    saveCurrentTable();
                 }
             });
 
@@ -696,6 +702,7 @@
                         } else {
                             generatedTableContainer.innerHTML = renderMarkdownTable(currentTableMarkdown);
                         }
+                        saveCurrentTable();
                     }
                 } catch (err) {
                     console.error('Table Modify Error:', err);
@@ -804,11 +811,12 @@
                         officialTopic.value = '';
                         officialReference.value = '';
                         attachmentsContainer.innerHTML = '';
-                        await addDoc(collection(db, "users", user.uid, "officials"), {
+                        const docRef = await addDoc(collection(db, "users", user.uid, "officials"), {
                             title: currentOfficialTitle,
                             createdAt: serverTimestamp(),
                             rawContent: currentOfficialMarkdown
                         });
+                        currentOfficialId = docRef.id;
                         loadAndDisplayItems('officials', officialSavedList, viewOfficial);
                     }
                 } catch (err) {
@@ -839,6 +847,7 @@
                     isEditingOfficial = false;
                     editOfficialBtn.textContent = '편집';
                     editOfficialBtn.classList.remove('bg-green-500', 'text-white');
+                    saveCurrentOfficial();
                 }
             });
 
@@ -857,6 +866,7 @@
                     editOfficialTitleBtn.textContent = '편집';
                     editOfficialTitleBtn.classList.remove('bg-green-500', 'text-white');
                     currentOfficialTitle = officialTitle.textContent;
+                    saveCurrentOfficial();
                 } else {
                     officialTitleInput.value = officialTitle.textContent;
                     officialTitle.classList.add('hidden');
@@ -898,6 +908,7 @@
                         } else {
                             generatedOfficialContainer.innerHTML = parseMarkdown(currentOfficialMarkdown);
                         }
+                        saveCurrentOfficial();
                         officialModifyPrompt.value = '';
                     }
                 } catch (err) {
@@ -927,11 +938,12 @@
                         letterOutputSection.classList.remove('hidden');
                         letterModifySection.classList.remove('hidden');
                         letterTopic.value = '';
-                        await addDoc(collection(db, "users", user.uid, "letters"), {
+                        const docRef = await addDoc(collection(db, "users", user.uid, "letters"), {
                             title: topic,
                             createdAt: serverTimestamp(),
                             rawContent: currentLetterMarkdown
                         });
+                        currentLetterId = docRef.id;
                         loadAndDisplayItems('letters', letterSavedList, viewLetter);
                     }
                 } catch (err) {
@@ -962,6 +974,7 @@
                     isEditingLetter = false;
                     editLetterBtn.textContent = '편집';
                     editLetterBtn.classList.remove('bg-green-500', 'text-white');
+                    saveCurrentLetter();
                 }
             });
 
@@ -994,6 +1007,7 @@
                         } else {
                             generatedLetterContainer.innerHTML = parseMarkdown(currentLetterMarkdown);
                         }
+                        saveCurrentLetter();
                         letterModifyPrompt.value = '';
                     }
                 } catch (err) {
@@ -1115,12 +1129,14 @@
                     button.addEventListener('click', async (e) => {
                         const user = auth.currentUser;
                         if (!user) return;
-                        const docRef = doc(db, "users", user.uid, "plans", e.target.dataset.id);
+                        const planId = e.target.dataset.id;
+                        const docRef = doc(db, "users", user.uid, "plans", planId);
                         const docSnap = await getDoc(docRef);
                         if (docSnap.exists()) {
                             const planToView = docSnap.data();
                             switchView('plan');
                             displayContent(planToView.rawContent, planToView.title);
+                            currentPlanId = planId;
                             outputPanel.scrollIntoView({ behavior: 'smooth' });
                         }
                     });
@@ -1203,6 +1219,7 @@
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 switchView('table');
+                currentTableId = id;
                 currentTableMarkdown = data.rawContent;
                 generatedTableContainer.innerHTML = renderMarkdownTable(currentTableMarkdown);
                 tableOutputSection.classList.remove('hidden');
@@ -1218,6 +1235,7 @@
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 switchView('official');
+                currentOfficialId = id;
                 currentOfficialTitle = data.title;
                 currentOfficialMarkdown = data.rawContent;
                 officialTitle.textContent = currentOfficialTitle;
@@ -1235,6 +1253,7 @@
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 switchView('letter');
+                currentLetterId = id;
                 currentLetterMarkdown = data.rawContent;
                 generatedLetterContainer.innerHTML = parseMarkdown(currentLetterMarkdown);
                 letterOutputSection.classList.remove('hidden');
@@ -1347,12 +1366,13 @@
                     const rawText = result.candidates[0].content.parts[0].text;
                     displayContent(rawText, planType);
                     
-                    await addDoc(collection(db, "users", user.uid, "plans"), {
+                    const docRef = await addDoc(collection(db, "users", user.uid, "plans"), {
                         title: planTitle.textContent,
                         planType: planType,
                         createdAt: serverTimestamp(),
                         rawContent: rawText
                     });
+                    currentPlanId = docRef.id;
                     loadAndDisplayPlans(); // Refresh recent plans list
                     outputPanel.scrollIntoView({ behavior: 'smooth' });
                 } else if (result.candidates?.[0]?.finishReason) {
@@ -1555,6 +1575,62 @@
             }, 2000);
         }
 
+        async function saveCurrentPlan() {
+            const user = auth.currentUser;
+            if (!user || !currentPlanId) return;
+            let rawContent = `TITLE: ${planTitle.textContent}\n\n`;
+            planContainer.querySelectorAll('.plan-section').forEach(section => {
+                const title = section.querySelector('h3').textContent;
+                const markdown = section.dataset.markdownContent;
+                rawContent += `## ${title}\n${markdown}\n\n`;
+            });
+            try {
+                await updateDoc(doc(db, "users", user.uid, "plans", currentPlanId), {
+                    title: planTitle.textContent,
+                    rawContent
+                });
+            } catch (err) {
+                console.error('Plan Save Error:', err);
+            }
+        }
+
+        async function saveCurrentTable() {
+            const user = auth.currentUser;
+            if (!user || !currentTableId) return;
+            try {
+                await updateDoc(doc(db, "users", user.uid, "tables", currentTableId), {
+                    rawContent: currentTableMarkdown
+                });
+            } catch (err) {
+                console.error('Table Save Error:', err);
+            }
+        }
+
+        async function saveCurrentOfficial() {
+            const user = auth.currentUser;
+            if (!user || !currentOfficialId) return;
+            try {
+                await updateDoc(doc(db, "users", user.uid, "officials", currentOfficialId), {
+                    title: currentOfficialTitle,
+                    rawContent: currentOfficialMarkdown
+                });
+            } catch (err) {
+                console.error('Official Save Error:', err);
+            }
+        }
+
+        async function saveCurrentLetter() {
+            const user = auth.currentUser;
+            if (!user || !currentLetterId) return;
+            try {
+                await updateDoc(doc(db, "users", user.uid, "letters", currentLetterId), {
+                    rawContent: currentLetterMarkdown
+                });
+            } catch (err) {
+                console.error('Letter Save Error:', err);
+            }
+        }
+
         planContainer.addEventListener('click', function(e) {
             const button = e.target.closest('button');
             if (!button) return;
@@ -1589,6 +1665,7 @@
                     newContentDiv.className = 'plan-section-content';
                     newContentDiv.innerHTML = parseMarkdown(newMarkdown);
                     textarea.replaceWith(newContentDiv);
+                    saveCurrentPlan();
                 }
             }
         });
@@ -1601,6 +1678,7 @@
                 planTitleInput.classList.add('hidden');
                 editTitleBtn.textContent = '편집';
                 editTitleBtn.classList.remove('bg-green-500', 'text-white');
+                saveCurrentPlan();
             } else {
                 planTitleInput.value = planTitle.textContent;
                 planTitle.classList.add('hidden');
