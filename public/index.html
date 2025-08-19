@@ -226,7 +226,10 @@
                                         <h2 id="plan-title" class="text-2xl font-bold text-slate-800"></h2>
                                         <input type="text" id="plan-title-input" class="hidden text-2xl font-bold text-slate-800 border-b-2 border-blue-500 focus:outline-none">
                                     </div>
-                                    <button id="edit-title-btn" class="edit-btn">편집</button>
+                                    <div class="flex gap-2">
+                                        <button id="merge-plan-btn" class="copy-section-btn">한장으로 합치기</button>
+                                        <button id="edit-title-btn" class="edit-btn">편집</button>
+                                    </div>
                                 </div>
                                 <div id="generated-plan-container" class="space-y-6">
                                     <!-- Generated sections will be injected here -->
@@ -466,6 +469,7 @@
         const planContainer = document.getElementById('generated-plan-container');
         const planTitle = document.getElementById('plan-title');
         const planTitleInput = document.getElementById('plan-title-input');
+        const mergePlanBtn = document.getElementById('merge-plan-btn');
         const editTitleBtn = document.getElementById('edit-title-btn');
         const errorMessageDiv = document.getElementById('error-message');
         const errorDetails = document.getElementById('error-details');
@@ -1358,6 +1362,8 @@
                                 <p class="text-sm text-gray-500">생성일: ${plan.createdAt ? new Date(plan.createdAt.toDate()).toLocaleDateString() : '날짜 없음'}</p>
                             </div>
                             <div class="flex items-center gap-2">
+                                <button class="rename-plan-btn text-sm font-medium text-green-600 hover:underline" data-id="${plan.id}">수정</button>
+                                <button class="copy-plan-btn text-sm font-medium text-purple-600 hover:underline" data-id="${plan.id}">복사</button>
                                 <button class="view-plan-btn text-sm font-medium text-blue-600 hover:underline" data-id="${plan.id}">보기</button>
                                 <button class="delete-plan-btn text-sm font-medium text-red-600 hover:underline" data-id="${plan.id}">삭제</button>
                             </div>
@@ -1402,6 +1408,44 @@
                         }
                     });
                 });
+
+                document.querySelectorAll('.rename-plan-btn').forEach(button => {
+                    button.addEventListener('click', async (e) => {
+                        const user = auth.currentUser;
+                        if (!user) return;
+                        const planId = e.target.dataset.id;
+                        const targetPlan = plans.find(p => p.id === planId);
+                        const newName = prompt('새 이름을 입력하세요', targetPlan?.title || '');
+                        if (newName && newName.trim()) {
+                            await updateDoc(doc(db, "users", user.uid, "plans", planId), { title: newName.trim() });
+                            loadAndDisplayPlans();
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.copy-plan-btn').forEach(button => {
+                    button.addEventListener('click', async (e) => {
+                        const user = auth.currentUser;
+                        if (!user) return;
+                        const planId = e.target.dataset.id;
+                        const plan = plans.find(p => p.id === planId);
+                        if (!plan) return;
+                        const baseTitle = plan.title.replace(/\(복사본\d+\)$/,'');
+                        let maxCopy = 0;
+                        plans.forEach(p => {
+                            const match = p.title.match(new RegExp(`^${baseTitle}\\(복사본(\\d+)\\)$`));
+                            if (match) maxCopy = Math.max(maxCopy, parseInt(match[1]));
+                        });
+                        const newTitle = `${baseTitle}(복사본${maxCopy + 1})`;
+                        const { id: _id, createdAt: _createdAt, ...rest } = plan;
+                        await addDoc(collection(db, "users", user.uid, "plans"), {
+                            ...rest,
+                            title: newTitle,
+                            createdAt: serverTimestamp(),
+                        });
+                        loadAndDisplayPlans();
+                    });
+                });
             } catch (error) {
                 console.error("Error loading plans:", error);
                 recentPlansList.innerHTML = `<p class="text-red-500 text-center py-4">계획서를 불러오는 중 오류가 발생했습니다.</p>`;
@@ -1434,6 +1478,8 @@
                             <p class="text-sm text-gray-500">생성일: ${item.createdAt ? new Date(item.createdAt.toDate()).toLocaleDateString() : '날짜 없음'}</p>
                         </div>
                         <div class="flex items-center gap-2">
+                            <button class="rename-item-btn text-sm font-medium text-green-600 hover:underline" data-id="${item.id}">수정</button>
+                            <button class="copy-item-btn text-sm font-medium text-purple-600 hover:underline" data-id="${item.id}">복사</button>
                             <button class="view-item-btn text-sm font-medium text-blue-600 hover:underline" data-id="${item.id}">보기</button>
                             <button class="delete-item-btn text-sm font-medium text-red-600 hover:underline" data-id="${item.id}">삭제</button>
                         </div>`;
@@ -1448,6 +1494,42 @@
                         const user = auth.currentUser;
                         if (!user) return;
                         await deleteDoc(doc(db, "users", user.uid, type, id));
+                        loadAndDisplayItems(type, container, viewHandler);
+                    });
+                });
+                container.querySelectorAll('.rename-item-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const id = e.target.dataset.id;
+                        const user = auth.currentUser;
+                        if (!user) return;
+                        const target = items.find(i => i.id === id);
+                        const newName = prompt('새 이름을 입력하세요', target?.title || '');
+                        if (newName && newName.trim()) {
+                            await updateDoc(doc(db, "users", user.uid, type, id), { title: newName.trim() });
+                            loadAndDisplayItems(type, container, viewHandler);
+                        }
+                    });
+                });
+                container.querySelectorAll('.copy-item-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const id = e.target.dataset.id;
+                        const user = auth.currentUser;
+                        if (!user) return;
+                        const target = items.find(i => i.id === id);
+                        if (!target) return;
+                        const baseTitle = target.title.replace(/\(복사본\d+\)$/,'');
+                        let maxCopy = 0;
+                        items.forEach(i => {
+                            const match = i.title.match(new RegExp(`^${baseTitle}\\(복사본(\\d+)\\)$`));
+                            if (match) maxCopy = Math.max(maxCopy, parseInt(match[1]));
+                        });
+                        const newTitle = `${baseTitle}(복사본${maxCopy + 1})`;
+                        const { id: _id, createdAt: _createdAt, ...rest } = target;
+                        await addDoc(collection(db, "users", user.uid, type), {
+                            ...rest,
+                            title: newTitle,
+                            createdAt: serverTimestamp(),
+                        });
                         loadAndDisplayItems(type, container, viewHandler);
                     });
                 });
@@ -1971,6 +2053,25 @@ async function saveCurrentPlan() {
                 }
             }
         });
+
+        if (mergePlanBtn) {
+            mergePlanBtn.addEventListener('click', () => {
+                const order = ['목적', '운영 방침', '세부 운영 계획', '예산', '기대효과'];
+                let html = `<h1>${planTitle.textContent}</h1>`;
+                order.forEach(name => {
+                    const section = Array.from(planContainer.querySelectorAll('.plan-section'))
+                        .find(sec => sec.querySelector('h3').textContent.includes(name));
+                    if (section) {
+                        html += `<h2>${name}</h2>` + section.querySelector('.plan-section-content').innerHTML;
+                    }
+                });
+                const popup = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+                if (popup) {
+                    popup.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${planTitle.textContent}</title></head><body><button id="copyHtmlBtn">HTML 복사</button><div id="content">${html}</div><script>document.getElementById('copyHtmlBtn').addEventListener('click',function(){const t=document.createElement('textarea');t.value=document.getElementById('content').innerHTML;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);alert('HTML이 복사되었습니다.');});<\/script></body></html>`);
+                    popup.document.close();
+                }
+            });
+        }
 
         editTitleBtn.addEventListener('click', () => {
             const isEditing = editTitleBtn.textContent === '완료';
