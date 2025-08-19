@@ -244,6 +244,10 @@
                                         <button type="submit" id="modify-table-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 수정 적용</button>
                                     </form>
                                 </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold mt-6 mb-2">저장된 목록</h3>
+                                    <div id="table-saved-list" class="space-y-3"></div>
+                                </div>
                             </aside>
 
                             <!-- Output Section -->
@@ -274,12 +278,8 @@
                                             <textarea id="official-topic" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="공문서 주제를 입력하세요" required></textarea>
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700">근거 (선택)</label>
-                                            <div class="grid grid-cols-3 gap-2">
-                                                <input type="text" id="official-agency" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="관련 기관">
-                                                <input type="text" id="official-doc-number" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="문서 번호">
-                                                <input type="date" id="official-date" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
-                                            </div>
+                                            <label for="official-reference" class="block text-sm font-medium text-gray-700">근거 (선택)</label>
+                                            <input type="text" id="official-reference" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="관련 기관 문서 번호 날짜를 입력하세요">
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700">첨부 파일 (선택)</label>
@@ -300,6 +300,10 @@
                                         </div>
                                         <button type="submit" id="modify-official-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 수정 적용</button>
                                     </form>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold mt-6 mb-2">저장된 목록</h3>
+                                    <div id="official-saved-list" class="space-y-3"></div>
                                 </div>
                             </aside>
 
@@ -350,6 +354,10 @@
                                         </div>
                                         <button type="submit" id="modify-letter-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 수정 적용</button>
                                     </form>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold mt-6 mb-2">저장된 목록</h3>
+                                    <div id="letter-saved-list" class="space-y-3"></div>
                                 </div>
                             </aside>
 
@@ -460,6 +468,7 @@
         const tableModifySection = document.getElementById('table-modify-section');
         const tableModifyForm = document.getElementById('table-modify-form');
         const tableModifyPrompt = document.getElementById('table-modify-prompt');
+        const tableSavedList = document.getElementById('table-saved-list');
         let currentTableMarkdown = '';
         let isEditingTable = false;
 
@@ -472,14 +481,13 @@
         const letterModifySection = document.getElementById('letter-modify-section');
         const letterModifyForm = document.getElementById('letter-modify-form');
         const letterModifyPrompt = document.getElementById('letter-modify-prompt');
+        const letterSavedList = document.getElementById('letter-saved-list');
         let currentLetterMarkdown = '';
         let isEditingLetter = false;
 
         const officialForm = document.getElementById('official-form');
         const officialTopic = document.getElementById('official-topic');
-        const officialAgency = document.getElementById('official-agency');
-        const officialDocNumber = document.getElementById('official-doc-number');
-        const officialDate = document.getElementById('official-date');
+        const officialReference = document.getElementById('official-reference');
         const attachmentsContainer = document.getElementById('attachments-container');
         const addAttachmentBtn = document.getElementById('add-attachment-btn');
         const officialOutputSection = document.getElementById('official-output-section');
@@ -493,6 +501,7 @@
         const officialTitleInput = document.getElementById('official-title-input');
         const editOfficialTitleBtn = document.getElementById('edit-official-title-btn');
         const copyOfficialTitleBtn = document.getElementById('copy-official-title-btn');
+        const officialSavedList = document.getElementById('official-saved-list');
         let currentOfficialTitle = '';
         let currentOfficialMarkdown = '';
         let isEditingOfficial = false;
@@ -571,6 +580,15 @@
             if (targetView === 'home' || targetView === 'plan') {
                 loadAndDisplayPlans();
             }
+            if (targetView === 'table') {
+                loadAndDisplayItems('tables', tableSavedList, viewTable);
+            }
+            if (targetView === 'official') {
+                loadAndDisplayItems('officials', officialSavedList, viewOfficial);
+            }
+            if (targetView === 'letter') {
+                loadAndDisplayItems('letters', letterSavedList, viewLetter);
+            }
         };
 
         navHome.addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
@@ -587,6 +605,8 @@
         if (tableForm) {
             tableForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                const user = auth.currentUser;
+                if (!user) return;
                 let topic = tableTopic.value.trim();
                 const rowMatch = topic.match(/\[행\]\s*(\d+)/);
                 const colMatch = topic.match(/\[열\]\s*(\d+)/);
@@ -611,6 +631,12 @@
                         generatedTableContainer.innerHTML = renderMarkdownTable(currentTableMarkdown);
                         tableOutputSection.classList.remove('hidden');
                         tableModifySection.classList.remove('hidden');
+                        await addDoc(collection(db, "users", user.uid, "tables"), {
+                            title: topic,
+                            createdAt: serverTimestamp(),
+                            rawContent: currentTableMarkdown
+                        });
+                        loadAndDisplayItems('tables', tableSavedList, viewTable);
                     }
                 } catch (err) {
                     console.error('Table Generation Error:', err);
@@ -686,12 +712,18 @@
                 input.type = 'file';
                 input.className = 'block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer';
                 const span = document.createElement('span');
-                span.className = 'text-sm text-gray-600';
+                span.className = 'text-sm text-gray-600 flex-1';
                 input.addEventListener('change', () => {
                     span.textContent = input.files[0]?.name || '';
                 });
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'text-red-500 font-bold';
+                removeBtn.textContent = 'X';
+                removeBtn.addEventListener('click', () => wrapper.remove());
                 wrapper.appendChild(input);
                 wrapper.appendChild(span);
+                wrapper.appendChild(removeBtn);
                 attachmentsContainer.appendChild(wrapper);
             };
             addAttachmentBtn.addEventListener('click', addAttachmentInput);
@@ -700,14 +732,34 @@
         if (officialForm) {
             officialForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                const user = auth.currentUser;
+                if (!user) return;
                 const topic = officialTopic.value.trim();
                 if (!topic) return;
-                const agency = officialAgency.value.trim();
-                const docNumber = officialDocNumber.value.trim();
-                let date = officialDate.value.trim();
-                if (date) {
-                    const [y, m, d] = date.split('-');
-                    date = `${y}.${m}.${d}.`;
+                const referenceText = officialReference.value.trim();
+                let agency = '', docNumber = '', date = '';
+                if (referenceText) {
+                    try {
+                        const parsePrompt = `다음 문장에서 관련 기관, 문서 번호, 날짜를 JSON으로 추출해줘. 포맷: {"agency":"", "docNumber":"", "date":""} 문장: ${referenceText}`;
+                        const parseRes = await fetch('/.netlify/functions/generatePlan', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ prompt: parsePrompt })
+                        });
+                        const parseResult = await parseRes.json();
+                        const text = parseResult.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (text) {
+                            const jsonMatch = text.match(/\{[\s\S]*\}/);
+                            if (jsonMatch) {
+                                const obj = JSON.parse(jsonMatch[0]);
+                                agency = obj.agency || '';
+                                docNumber = obj.docNumber || '';
+                                date = obj.date || '';
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Evidence Parse Error:', err);
+                    }
                 }
                 const attachments = Array.from(attachmentsContainer.querySelectorAll('input[type="file"]'))
                     .map(input => input.files[0]?.name)
@@ -750,10 +802,14 @@
                         officialOutputSection.classList.remove('hidden');
                         officialModifySection.classList.remove('hidden');
                         officialTopic.value = '';
-                        officialAgency.value = '';
-                        officialDocNumber.value = '';
-                        officialDate.value = '';
+                        officialReference.value = '';
                         attachmentsContainer.innerHTML = '';
+                        await addDoc(collection(db, "users", user.uid, "officials"), {
+                            title: currentOfficialTitle,
+                            createdAt: serverTimestamp(),
+                            rawContent: currentOfficialMarkdown
+                        });
+                        loadAndDisplayItems('officials', officialSavedList, viewOfficial);
                     }
                 } catch (err) {
                     console.error('Official Generation Error:', err);
@@ -853,6 +909,8 @@
         if (letterForm) {
             letterForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                const user = auth.currentUser;
+                if (!user) return;
                 const topic = letterTopic.value.trim();
                 if (!topic) return;
                 const prompt = `다음 주제로 가정통신문을 마크다운 형식으로 작성해줘.\n주제: ${topic}\n추가 설명 없이 내용만 출력해.`;
@@ -869,6 +927,12 @@
                         letterOutputSection.classList.remove('hidden');
                         letterModifySection.classList.remove('hidden');
                         letterTopic.value = '';
+                        await addDoc(collection(db, "users", user.uid, "letters"), {
+                            title: topic,
+                            createdAt: serverTimestamp(),
+                            rawContent: currentLetterMarkdown
+                        });
+                        loadAndDisplayItems('letters', letterSavedList, viewLetter);
                     }
                 } catch (err) {
                     console.error('Letter Generation Error:', err);
@@ -1081,6 +1145,100 @@
                 recentPlansList.innerHTML = `<p class="text-red-500 text-center py-4">계획서를 불러오는 중 오류가 발생했습니다.</p>`;
                 if (generatorRecentPlans) generatorRecentPlans.innerHTML = `<p class="text-red-500 text-center py-4">계획서를 불러오는 중 오류가 발생했습니다.</p>`;
                 updateStatsChart([]);
+            }
+        };
+
+        const loadAndDisplayItems = async (type, container, viewHandler) => {
+            const user = auth.currentUser;
+            if (!user || !container) return;
+            const colRef = collection(db, "users", user.uid, type);
+            const q = query(colRef);
+            try {
+                const snap = await getDocs(q);
+                const items = [];
+                snap.forEach((doc) => items.push({ id: doc.id, ...doc.data() }));
+                items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                container.innerHTML = '';
+                if (items.length === 0) {
+                    container.innerHTML = `<p class="text-gray-500 text-center py-4">저장된 항목이 없습니다.</p>`;
+                    return;
+                }
+                items.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'p-4 border rounded-md hover:bg-gray-50 transition-colors flex justify-between items-center';
+                    el.innerHTML = `
+                        <div>
+                            <p class="font-semibold">${item.title}</p>
+                            <p class="text-sm text-gray-500">생성일: ${item.createdAt ? new Date(item.createdAt.toDate()).toLocaleDateString() : '날짜 없음'}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button class="view-item-btn text-sm font-medium text-blue-600 hover:underline" data-id="${item.id}">보기</button>
+                            <button class="delete-item-btn text-sm font-medium text-red-600 hover:underline" data-id="${item.id}">삭제</button>
+                        </div>`;
+                    container.appendChild(el);
+                });
+                container.querySelectorAll('.view-item-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => viewHandler(e.target.dataset.id));
+                });
+                container.querySelectorAll('.delete-item-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const id = e.target.dataset.id;
+                        const user = auth.currentUser;
+                        if (!user) return;
+                        await deleteDoc(doc(db, "users", user.uid, type, id));
+                        loadAndDisplayItems(type, container, viewHandler);
+                    });
+                });
+            } catch (err) {
+                console.error(`Error loading ${type}:`, err);
+                container.innerHTML = `<p class="text-red-500 text-center py-4">목록을 불러오지 못했습니다.</p>`;
+            }
+        };
+
+        const viewTable = async (id) => {
+            const user = auth.currentUser;
+            if (!user) return;
+            const docRef = doc(db, "users", user.uid, "tables", id);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                switchView('table');
+                currentTableMarkdown = data.rawContent;
+                generatedTableContainer.innerHTML = renderMarkdownTable(currentTableMarkdown);
+                tableOutputSection.classList.remove('hidden');
+                tableModifySection.classList.remove('hidden');
+            }
+        };
+
+        const viewOfficial = async (id) => {
+            const user = auth.currentUser;
+            if (!user) return;
+            const docRef = doc(db, "users", user.uid, "officials", id);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                switchView('official');
+                currentOfficialTitle = data.title;
+                currentOfficialMarkdown = data.rawContent;
+                officialTitle.textContent = currentOfficialTitle;
+                generatedOfficialContainer.innerHTML = parseMarkdown(currentOfficialMarkdown);
+                officialOutputSection.classList.remove('hidden');
+                officialModifySection.classList.remove('hidden');
+            }
+        };
+
+        const viewLetter = async (id) => {
+            const user = auth.currentUser;
+            if (!user) return;
+            const docRef = doc(db, "users", user.uid, "letters", id);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                switchView('letter');
+                currentLetterMarkdown = data.rawContent;
+                generatedLetterContainer.innerHTML = parseMarkdown(currentLetterMarkdown);
+                letterOutputSection.classList.remove('hidden');
+                letterModifySection.classList.remove('hidden');
             }
         };
 
