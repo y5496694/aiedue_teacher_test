@@ -1130,13 +1130,18 @@
         }
 
         if (letterForm) {
+            let letterExamples = '';
+            fetch('/letter_examples.txt')
+                .then(response => response.text())
+                .then(text => { letterExamples = text; });
+
             letterForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const user = auth.currentUser;
                 if (!user) return;
                 const topic = letterTopic.value.trim();
                 if (!topic) return;
-                const prompt = `다음 주제로 가정통신문을 마크다운 형식으로 작성해줘.\n주제: ${topic}\n추가 설명 없이 내용만 출력해.`;
+                const prompt = `다음 가정통신문 예시를 참고하여 가정통신문을 마크다운 형식으로 작성해줘.\n예시:\n${letterExamples}\n\n주제: ${topic}\n추가 설명 없이 내용만 출력해.`;
                 try {
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
