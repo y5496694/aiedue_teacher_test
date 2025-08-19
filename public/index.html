@@ -146,7 +146,7 @@
                 <div id="plan-view" class="hidden">
                     <div class="flex flex-col lg:flex-row gap-6">
                         <aside class="w-full lg:w-1/3 bg-white p-6 rounded-lg shadow-lg h-fit lg:sticky top-24">
-                            <h2 class="text-xl font-bold mb-4 border-b pb-2">1. 계획서 조건 입력</h2>
+                            <h3 class="text-lg font-semibold mb-4">입력 테이블</h3>
                             <form id="plan-form" onsubmit="return false;">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">학교급</label>
@@ -183,14 +183,34 @@
                                 <p id="form-error" class="text-red-500 text-xs italic mt-2 hidden"></p>
                                 <button type="submit" id="generate-btn" class="w-full bg-[#7A9D54] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#6a8a4a] flex items-center justify-center">AI 운영계획서 생성</button>
                             </form>
+                            <div class="bg-white p-6 rounded-lg shadow hidden" id="plan-modify-section">
+                                <h3 class="text-lg font-semibold mb-4">수정 테이블</h3>
+                                <form id="plan-modify-form" class="space-y-4">
+                                    <div>
+                                        <label for="plan-modify-target" class="block text-sm font-medium text-gray-700">수정 영역</label>
+                                        <select id="plan-modify-target" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                                            <option value="전체">전체</option>
+                                            <option value="목적">목적</option>
+                                            <option value="운영 방침">운영 방침</option>
+                                            <option value="세부 운영 계획">세부 운영 계획</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="plan-modify-prompt" class="block text-sm font-medium text-gray-700">수정 내용</label>
+                                        <input type="text" id="plan-modify-prompt" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="수정할 내용을 입력하세요">
+                                    </div>
+                                    <button type="submit" id="modify-plan-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 수정 적용</button>
+                                </form>
+                            </div>
                             <div class="mt-8">
-                                <h3 class="text-lg font-bold mb-4 border-b pb-2">최근 생성한 계획서</h3>
-                                <div id="generator-recent-plans" class="space-y-3 max-h-60 overflow-y-auto">
+                                <h3 class="text-lg font-bold mb-4 border-b pb-2">목록 테이블</h3>
+                                <div id="plan-saved-list" class="space-y-3 max-h-60 overflow-y-auto">
                                     <!-- Recent plans will be dynamically inserted here -->
                                 </div>
                             </div>
                         </aside>
                         <section id="output-panel" class="w-full lg:w-2/3">
+                            <h3 class="text-lg font-semibold mb-4">출력 테이블</h3>
                             <div id="initial-message" class="bg-white p-8 rounded-lg shadow-lg"><h2 class="text-2xl font-bold text-gray-800">AI 운영계획서 초안이 이곳에 표시됩니다.</h2></div>
                             <div id="loading-indicator" class="hidden flex-col items-center justify-center text-center py-16">
                                 <div class="loader"></div>
@@ -457,7 +477,11 @@
         const keywordsContainer = document.getElementById('keywords-container');
         const addKeywordBtn = document.getElementById('add-keyword-btn');
         const formError = document.getElementById('form-error');
-        const generatorRecentPlans = document.getElementById('generator-recent-plans');
+        const planModifySection = document.getElementById('plan-modify-section');
+        const planModifyForm = document.getElementById('plan-modify-form');
+        const planModifyTarget = document.getElementById('plan-modify-target');
+        const planModifyPrompt = document.getElementById('plan-modify-prompt');
+        const planSavedList = document.getElementById('plan-saved-list');
         let currentPlanId = null;
 
         const tableForm = document.getElementById('table-form');
@@ -581,6 +605,9 @@
                 navLinks[key].classList.toggle('active', key === targetView);
             });
             window.location.hash = targetView;
+            if (targetView === 'plan' && planModifySection) {
+                planModifySection.classList.add('hidden');
+            }
             if (targetView === 'home' || targetView === 'plan') {
                 loadAndDisplayPlans();
             }
@@ -1338,8 +1365,8 @@
                 };
                 
                 populateList(recentPlansList, plans.slice(0, 5));
-                if (generatorRecentPlans) {
-                    populateList(generatorRecentPlans, plans.slice(0, 5));
+                if (planSavedList) {
+                    populateList(planSavedList, plans);
                 }
 
                 document.querySelectorAll('.view-plan-btn').forEach(button => {
@@ -1376,7 +1403,7 @@
             } catch (error) {
                 console.error("Error loading plans:", error);
                 recentPlansList.innerHTML = `<p class="text-red-500 text-center py-4">계획서를 불러오는 중 오류가 발생했습니다.</p>`;
-                if (generatorRecentPlans) generatorRecentPlans.innerHTML = `<p class="text-red-500 text-center py-4">계획서를 불러오는 중 오류가 발생했습니다.</p>`;
+                if (planSavedList) planSavedList.innerHTML = `<p class="text-red-500 text-center py-4">계획서를 불러오는 중 오류가 발생했습니다.</p>`;
                 updateStatsChart([]);
             }
         };
@@ -1661,6 +1688,7 @@
 
             loadingIndicator.style.display = 'none';
             resultSection.classList.remove('hidden');
+            if (planModifySection) planModifySection.classList.remove('hidden');
         }
 
         function parseMarkdown(markdown) {
@@ -1792,7 +1820,7 @@
             }, 2000);
         }
 
-        async function saveCurrentPlan() {
+async function saveCurrentPlan() {
             const user = auth.currentUser;
             if (!user || !currentPlanId) return;
             let rawContent = `TITLE: ${planTitle.textContent}\n\n`;
@@ -1809,6 +1837,61 @@
             } catch (err) {
                 console.error('Plan Save Error:', err);
             }
+        }
+
+        if (planModifyForm) {
+            planModifyForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!currentPlanId) return;
+                const userPrompt = planModifyPrompt.value.trim();
+                if (!userPrompt) return;
+                const target = planModifyTarget.value;
+                let prompt;
+                if (target === '전체') {
+                    let rawContent = `TITLE: ${planTitle.textContent}\n\n`;
+                    planContainer.querySelectorAll('.plan-section').forEach(section => {
+                        const title = section.querySelector('h3').textContent;
+                        const markdown = section.dataset.markdownContent;
+                        rawContent += `## ${title}\n${markdown}\n\n`;
+                    });
+                    prompt = `다음 운영계획서를 사용자의 요청에 맞게 수정해줘.\n${rawContent}\n\n요청: ${userPrompt}\n\n' TITLE:'으로 시작하는 동일한 형식의 마크다운으로만 결과를 출력해줘.`;
+                } else {
+                    const section = Array.from(planContainer.querySelectorAll('.plan-section')).find(sec => sec.querySelector('h3').textContent.includes(target));
+                    if (!section) return;
+                    const secTitle = section.querySelector('h3').textContent;
+                    const secMarkdown = section.dataset.markdownContent;
+                    prompt = `다음 운영계획서의 '${secTitle}' 부분을 사용자의 요청에 따라 수정해줘.\n## ${secTitle}\n${secMarkdown}\n\n요청: ${userPrompt}\n\n수정된 '${secTitle}' 부분만 '## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
+                }
+                try {
+                    const response = await fetch('/.netlify/functions/generatePlan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt })
+                    });
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        const markdown = extractMarkdownFromText(text);
+                        if (target === '전체') {
+                            displayContent(markdown, planTitle.textContent);
+                        } else {
+                            const section = Array.from(planContainer.querySelectorAll('.plan-section')).find(sec => sec.querySelector('h3').textContent.includes(target));
+                            if (section) {
+                                const lines = markdown.split('\n');
+                                if (lines[0].startsWith('##')) lines.shift();
+                                const newContent = lines.join('\n').trim();
+                                section.dataset.markdownContent = newContent;
+                                const contentDiv = section.querySelector('.plan-section-content');
+                                contentDiv.innerHTML = parseMarkdown(newContent);
+                            }
+                        }
+                        saveCurrentPlan();
+                        planModifyPrompt.value = '';
+                    }
+                } catch (err) {
+                    console.error('Plan Modify Error:', err);
+                }
+            });
         }
 
         async function saveCurrentTable() {
