@@ -1604,6 +1604,15 @@
             if (e.target.tagName === 'BUTTON') {
                 planTypeButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
                 e.target.classList.add('active');
+                // Clear custom topic input when a preset topic is chosen
+                customPlanTypeInput.value = '';
+            }
+        });
+
+        // When user types a custom topic, deselect all preset topic buttons
+        customPlanTypeInput.addEventListener('input', () => {
+            if (customPlanTypeInput.value.trim()) {
+                planTypeButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
             }
         });
 
@@ -1780,9 +1789,38 @@
 
         function parseMarkdown(markdown) {
             const plainMarkdown = markdown.replace(/\*\*(.*?)\*\*/g, '$1');
-
             if (plainMarkdown.includes('|')) {
-                return renderMarkdownTable(plainMarkdown);
+                const lines = plainMarkdown.split('\n');
+                let html = '';
+                let tableBuffer = [];
+                let textBuffer = [];
+
+                const flushText = () => {
+                    if (textBuffer.length) {
+                        html += markdownToHtml(textBuffer.join('\n'));
+                        textBuffer = [];
+                    }
+                };
+
+                const flushTable = () => {
+                    if (tableBuffer.length) {
+                        html += renderMarkdownTable(tableBuffer.join('\n'));
+                        tableBuffer = [];
+                    }
+                };
+
+                lines.forEach(line => {
+                    if (line.includes('|')) {
+                        flushText();
+                        tableBuffer.push(line);
+                    } else {
+                        flushTable();
+                        textBuffer.push(line);
+                    }
+                });
+                flushText();
+                flushTable();
+                return html;
             }
             return markdownToHtml(plainMarkdown);
         }
@@ -1834,6 +1872,7 @@
             const rows = markdown
                 .trim()
                 .split('\n')
+                .filter(row => row.includes('|'))
                 .map(row => row.split('|').slice(1, -1).map(cell => cell.trim()));
             if (rows.length < 2) return markdownToHtml(markdown);
 
