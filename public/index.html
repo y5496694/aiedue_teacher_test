@@ -51,17 +51,17 @@
         .nav-link { padding: 0.5rem 1rem; border-radius: 0.375rem; transition: background-color 0.2s, color 0.2s; }
         .nav-link.active { background-color: #7A9D54; color: white; }
         .nav-link:not(.active):hover { background-color: #f3f4f6; }
-        .school-level-btn, .plan-type-btn {
+        .school-level-btn, .plan-type-btn, .outline-btn {
             transition: all 0.2s;
             border: 2px solid transparent;
         }
-        .school-level-btn.active, .plan-type-btn.active {
+        .school-level-btn.active, .plan-type-btn.active, .outline-btn.active {
             background-color: #84cc16; /* lime-500 */
             color: white;
             border-color: #65a30d; /* lime-600 */
             font-weight: 600;
         }
-        .school-level-btn:not(.active), .plan-type-btn:not(.active) {
+        .school-level-btn:not(.active), .plan-type-btn:not(.active), .outline-btn:not(.active) {
             background-color: #f1f5f9; /* slate-100 */
             color: #475569; /* slate-600 */
         }
@@ -157,6 +157,15 @@
                                         <button type="button" data-value="없음" class="school-level-btn py-2 px-3 rounded-md text-sm">없음</button>
                                     </div>
                                 </div>
+                                <div class="mt-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">목차</label>
+                                    <div id="outline-buttons" class="grid grid-cols-2 gap-2">
+                                        <button type="button" data-value="기본 목차" class="outline-btn py-2 px-3 rounded-md text-sm active">기본 목차</button>
+                                        <button type="button" data-value="간단 목차A" class="outline-btn py-2 px-3 rounded-md text-sm">간단 목차A</button>
+                                        <button type="button" data-value="간단 목차B" class="outline-btn py-2 px-3 rounded-md text-sm">간단 목차B</button>
+                                        <button type="button" data-value="행정 목차" class="outline-btn py-2 px-3 rounded-md text-sm">행정 목차</button>
+                                    </div>
+                                </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">계획서 주제</label>
                                     <div id="plan-type-buttons" class="grid grid-cols-2 gap-2"></div>
@@ -183,14 +192,9 @@
                                 <h3 class="text-lg font-semibold mb-4">수정 테이블</h3>
                                 <form id="plan-modify-form" class="space-y-4">
                                     <div>
-                                        <label for="plan-modify-target" class="block text-sm font-medium text-gray-700">수정 영역</label>
+                                        <label for="plan-modify-target" class="block text-sm font-medium text-gray-700">수정 목차</label>
                                         <select id="plan-modify-target" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
                                             <option value="전체">전체</option>
-                                            <option value="목적">목적</option>
-                                            <option value="운영 방침">운영 방침</option>
-                                            <option value="세부 운영 계획">세부 운영 계획</option>
-                                            <option value="예산">예산</option>
-                                            <option value="기대효과">기대효과</option>
                                         </select>
                                     </div>
                                     <div>
@@ -466,6 +470,7 @@
         const outputPanel = document.getElementById('output-panel');
         const schoolLevelButtons = document.getElementById('school-level-buttons');
         const planTypeButtons = document.getElementById('plan-type-buttons');
+        const outlineButtons = document.getElementById('outline-buttons');
         const customPlanTypeInput = document.getElementById('custom-plan-type');
         const keywordsContainer = document.getElementById('keywords-container');
         const addKeywordBtn = document.getElementById('add-keyword-btn');
@@ -476,6 +481,42 @@
         const planModifyPrompt = document.getElementById('plan-modify-prompt');
         const planSavedList = document.getElementById('plan-saved-list');
         let currentPlanId = null;
+
+        const planOutlineDefinitions = {
+            "기본 목차": [
+                { title: "추진 배경", type: "bullet" },
+                { title: "추진 근거", type: "bullet" },
+                { title: "추진 목적", type: "bullet" },
+                { title: "추진 방향", type: "bullet" },
+                { title: "세부 추진 계획", type: "tablePlan" },
+                { title: "예산 운용 계획", type: "tableBudget" },
+                { title: "추진 일정", type: "tableSchedule" },
+                { title: "기대효과", type: "bullet" }
+            ],
+            "간단 목차A": [
+                { title: "근거", type: "bullet" },
+                { title: "목적", type: "bullet" },
+                { title: "방침", type: "bullet" },
+                { title: "세부 추진 계획", type: "tablePlan" },
+                { title: "기대효과", type: "bullet" }
+            ],
+            "간단 목차B": [
+                { title: "추진 근거", type: "bullet" },
+                { title: "추진 목적", type: "bullet" },
+                { title: "추진 방침", type: "bullet" },
+                { title: "주요 추진 과제", type: "bullet" },
+                { title: "추진 일정", type: "tableSchedule" },
+                { title: "기대 효과", type: "bullet" }
+            ],
+            "행정 목차": [
+                { title: "목적", type: "bullet" },
+                { title: "근거", type: "bullet" },
+                { title: "방침", type: "bullet" },
+                { title: "세부 추진 계획", type: "tablePlan" },
+                { title: "기대 효과", type: "bullet" },
+                { title: "행정사항", type: "bullet" }
+            ]
+        };
 
         const tableForm = document.getElementById('table-form');
         const tableTopic = document.getElementById('table-topic');
@@ -1600,6 +1641,13 @@
             }
         });
 
+        outlineButtons.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                outlineButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+            }
+        });
+
         // When user types a custom topic, deselect all preset topic buttons
         customPlanTypeInput.addEventListener('input', () => {
             if (customPlanTypeInput.value.trim()) {
@@ -1679,6 +1727,33 @@
 - **중요**: 생성하는 모든 텍스트에서 마크다운 굵은 글씨(**)를 사용하지 마세요. 모든 내용은 일반 텍스트로만 작성해주세요.
 `;
 
+                // Override prompt based on selected outline
+                const outlineName = outlineButtons.querySelector('.active').dataset.value;
+                const outline = planOutlineDefinitions[outlineName];
+                prompt = `당신은 대한민국의 유능한 교사입니다. 다음 조건에 맞춰 '${schoolLevel} ${planType}' 초안을 작성해 주세요.\n\n`;
+                prompt += `**출력 형식:**\n`;
+                prompt += `- 전체 계획서의 제목은 'TITLE: [${currentYear+1}학년도 ${planType}]'과 같이 간결한 형식으로 첫 줄에 명시해 주세요.\n`;
+                prompt += `- 내용은 반드시 다음 ${outline.length}개의 섹션으로 나누어 작성하고, 각 섹션 제목은 '## 1. ${outline[0].title}'과 같이 '##' 마크다운 헤더를 사용해야 합니다.\n`;
+                prompt += `- 섹션 순서: ${outline.map((s, i) => `${i+1}. ${s.title}`).join(', ')}\n\n`;
+                prompt += `**섹션별 작성 조건:**\n`;
+                outline.forEach((sec, idx) => {
+                    switch(sec.type) {
+                        case 'tablePlan':
+                            prompt += `${idx+1}.  **${sec.title}**: 관련 내용을 간단한 문단으로 설명한 뒤, '구분', '추진 내용', '세부 추진 계획', '시기', '대상' 항목을 포함한 Markdown 테이블을 추가하세요.\n`;
+                            break;
+                        case 'tableBudget':
+                            prompt += `${idx+1}.  **${sec.title}**: 예산 편성 방향을 짧게 서술하고, 이어서 '항목', '산출 근거', '예산액(원)', '비고'를 포함한 Markdown 테이블을 제공하세요. '산출 근거'는 '10000원*일*명'과 같이 금액*일*명 형태의 곱셈 식으로 작성하세요.\n`;
+                            break;
+                        case 'tableSchedule':
+                            prompt += `${idx+1}.  **${sec.title}**: 관련 내용을 간단히 설명하고, '월', '추진 내용' 항목을 포함한 Markdown 테이블을 추가하세요.\n`;
+                            break;
+                        default:
+                            prompt += `${idx+1}.  **${sec.title}**: 계획의 핵심 내용을 구체적으로 서술하세요.\n`;
+                    }
+                });
+                prompt += `- **핵심 키워드**: '${keywords.join(', ')}'를 계획서 전반에 자연스럽게 반영해주세요.\n`;
+                prompt += `- **중요**: 생성하는 모든 텍스트에서 마크다운 굵은 글씨(**)를 사용하지 마세요. 모든 내용은 일반 텍스트로만 작성해주세요.`;
+
                 const apiUrl = `/.netlify/functions/generatePlan`;
                 
                 const response = await fetch(apiUrl, { 
@@ -1736,10 +1811,12 @@
             planContainer.innerHTML = '';
 
             const sections = content.split(/^##\s/m).filter(s => s.trim() !== '');
+            const sectionTitles = [];
 
             sections.forEach(sectionText => {
                 const lines = sectionText.trim().split('\n');
                 const sectionTitle = lines.shift().trim();
+                sectionTitles.push(sectionTitle);
                 const sectionContentMarkdown = lines.join('\n').trim();
 
                 const sectionDiv = document.createElement('div');
@@ -1772,6 +1849,16 @@
                 sectionDiv.appendChild(contentDiv);
                 planContainer.appendChild(sectionDiv);
             });
+
+            if (planModifyTarget) {
+                planModifyTarget.innerHTML = '<option value="전체">전체</option>';
+                sectionTitles.forEach(title => {
+                    const opt = document.createElement('option');
+                    opt.value = title;
+                    opt.textContent = title;
+                    planModifyTarget.appendChild(opt);
+                });
+            }
 
             loadingIndicator.style.display = 'none';
             resultSection.classList.remove('hidden');
