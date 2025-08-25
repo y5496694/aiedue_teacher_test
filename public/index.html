@@ -112,7 +112,6 @@
                         <a href="#table" id="nav-table" class="nav-link">[한글] 표 만들기</a>
                         <a href="#official" id="nav-official" class="nav-link">기안문</a>
                         <a href="#letter" id="nav-letter" class="nav-link">가정통신문</a>
-                        <a href="#lesson" id="nav-lesson" class="nav-link">교수학습 지도안</a>
                         <button id="logout-btn" class="text-sm bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded-md transition-colors">로그아웃</button>
                     </nav>
                 </div>
@@ -396,11 +395,6 @@
                         </div>
                     </div>
                 </div>
-                <!-- Lesson Plan View -->
-                <div id="lesson-view" class="hidden">
-                    <h2 class="text-3xl font-bold mb-6">교수학습 지도안</h2>
-                    <p class="text-gray-600">준비 중입니다.</p>
-                </div>
             </main>
         </div>
         <!-- Toast Message -->
@@ -447,14 +441,12 @@
         const navTable = document.getElementById('nav-table');
         const navOfficial = document.getElementById('nav-official');
         const navLetter = document.getElementById('nav-letter');
-        const navLesson = document.getElementById('nav-lesson');
         const homeLink = document.getElementById('home-link');
         const homeView = document.getElementById('home-view');
         const planView = document.getElementById('plan-view');
         const tableView = document.getElementById('table-view');
         const officialView = document.getElementById('official-view');
         const letterView = document.getElementById('letter-view');
-        const lessonView = document.getElementById('lesson-view');
         const goToGeneratorBtn = document.getElementById('go-to-generator-btn');
         const goToTableBtn = document.getElementById('go-to-table-btn');
         const recentPlansList = document.getElementById('recent-plans-list');
@@ -535,8 +527,8 @@
         let isEditingOfficial = false;
         let currentOfficialId = null;
 
-        const views = { home: homeView, plan: planView, table: tableView, official: officialView, letter: letterView, lesson: lessonView };
-        const navLinks = { home: navHome, plan: navPlan, table: navTable, official: navOfficial, letter: navLetter, lesson: navLesson };
+        const views = { home: homeView, plan: planView, table: tableView, official: officialView, letter: letterView };
+        const navLinks = { home: navHome, plan: navPlan, table: navTable, official: navOfficial, letter: navLetter };
 
         let statsChartInstance = null;
 
@@ -629,7 +621,6 @@
         navTable.addEventListener('click', (e) => { e.preventDefault(); switchView('table'); });
         navOfficial.addEventListener('click', (e) => { e.preventDefault(); switchView('official'); });
         navLetter.addEventListener('click', (e) => { e.preventDefault(); switchView('letter'); });
-        navLesson.addEventListener('click', (e) => { e.preventDefault(); switchView('lesson'); });
         goToGeneratorBtn.addEventListener('click', () => switchView('plan'));
         goToTableBtn.addEventListener('click', () => switchView('table'));
 
