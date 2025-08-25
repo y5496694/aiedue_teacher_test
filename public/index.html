@@ -161,6 +161,7 @@
                                         <button type="button" data-value="간단 목차B" class="outline-btn py-1 px-2 rounded text-xs">간단 목차B</button>
                                         <button type="button" data-value="행정 목차" class="outline-btn py-1 px-2 rounded text-xs">행정 목차</button>
                                     </div>
+                                    <div id="outline-description" class="mt-2 text-xs text-gray-600"></div>
                                 </div>
                                 <div class="mt-4">
                                     <label class="block text-sm font-medium text-gray-700 mb-2">분류</label>
@@ -171,6 +172,7 @@
                                         <button type="button" data-value="장학 기획" class="category-btn py-1 px-2 rounded text-xs">장학 기획</button>
                                         <button type="button" data-value="업무 보고" class="category-btn py-1 px-2 rounded text-xs">업무 보고</button>
                                     </div>
+                                    <div id="category-description" class="mt-2 text-xs text-gray-600"></div>
                                 </div>
                                 <div class="mt-4">
                                     <label class="block text-sm font-medium text-gray-700 mb-2">계획서 주제</label>
@@ -475,6 +477,8 @@
         const outlineButtons = document.getElementById('outline-buttons');
         const categoryButtons = document.getElementById('category-buttons');
         const planCategoryInput = document.getElementById('plan-category');
+        const outlineDescription = document.getElementById('outline-description');
+        const categoryDescription = document.getElementById('category-description');
         const customPlanTypeInput = document.getElementById('custom-plan-type');
         const keywordsContainer = document.getElementById('keywords-container');
         const addKeywordBtn = document.getElementById('add-keyword-btn');
@@ -521,6 +525,34 @@
                 { title: "행정사항", type: "bullet" }
             ]
         };
+
+        const categoryExamples = {
+            "정책 기획": "예시 주제: 기본계획, 추진계획(활성화 계획, 지원계획)",
+            "행사 기획": "예시 주제: 워크숍 계획, 축제 계획, 협의회 계획",
+            "장학 기획": "예시 주제: 컨설팅 계획, 교육 계획, 제작 및 보급 계획",
+            "업무 보고": "예시 주제: 현황, 동향, 경과보고서"
+        };
+
+        const categoryFocus = {
+            "정책 기획": "목적, 내용, 방법에 주안점을 두어 작성하세요.",
+            "행사 기획": "목적, 세부 시행 계획에 주안점을 두어 작성하세요.",
+            "장학 기획": "현장연계성, 장학 내용 등에 주안점을 두어 작성하세요.",
+            "업무 보고": "객관적인 자료와 시사점에 주안점을 두어 작성하세요."
+        };
+
+        function updateOutlineDescription() {
+            const name = outlineButtons.querySelector('.active').dataset.value;
+            const sections = planOutlineDefinitions[name].map(s => s.title).join(', ');
+            outlineDescription.textContent = `목차 구성: ${sections}`;
+        }
+
+        function updateCategoryDescription() {
+            const category = categoryButtons.querySelector('.active').dataset.value;
+            categoryDescription.textContent = categoryExamples[category] || '';
+        }
+
+        updateOutlineDescription();
+        updateCategoryDescription();
 
         const tableForm = document.getElementById('table-form');
         const tableTopic = document.getElementById('table-topic');
@@ -1634,6 +1666,7 @@
             if (e.target.tagName === 'BUTTON') {
                 outlineButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
                 e.target.classList.add('active');
+                updateOutlineDescription();
             }
         });
 
@@ -1642,6 +1675,7 @@
                 categoryButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
                 e.target.classList.add('active');
                 planCategoryInput.value = e.target.dataset.value;
+                updateCategoryDescription();
             }
         });
 
@@ -1712,7 +1746,12 @@
                 // Override prompt based on selected outline
                 const outlineName = outlineButtons.querySelector('.active').dataset.value;
                 const outline = planOutlineDefinitions[outlineName];
+                const category = planCategoryInput.value;
+                const focusInstruction = categoryFocus[category] || '';
                 prompt = `당신은 대한민국의 유능한 교사입니다. 다음 조건에 맞춰 '${schoolLevel} ${planType}' 초안을 작성해 주세요.\n\n`;
+                if (focusInstruction) {
+                    prompt += `- 분류: ${category}. ${focusInstruction}\n\n`;
+                }
                 prompt += `**출력 형식:**\n`;
                 prompt += `- 전체 계획서의 제목은 'TITLE: [${currentYear+1}학년도 ${planType}]'과 같이 간결한 형식으로 첫 줄에 명시해 주세요.\n`;
                 prompt += `- 내용은 반드시 다음 ${outline.length}개의 섹션으로 나누어 작성하고, 각 섹션 제목은 '## 1. ${outline[0].title}'과 같이 '##' 마크다운 헤더를 사용해야 합니다.\n`;
