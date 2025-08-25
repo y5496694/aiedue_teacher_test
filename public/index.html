@@ -124,10 +124,6 @@
                         <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
                             <h3 class="text-xl font-bold mb-2">안녕하세요, <span id="home-user-email"></span> 선생님!</h3>
                             <p class="text-gray-600 mb-4">에이두 티쳐와 함께 학교의 업무를 간편히 관리해보세요.</p>
-                            <div class="flex flex-wrap gap-4">
-                                <button id="go-to-generator-btn" class="bg-[#7A9D54] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#6a8a4a] transition-colors">새 운영계획서 생성하기 →</button>
-                                <button id="go-to-table-btn" class="bg-[#7A9D54] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#6a8a4a] transition-colors">[한글] 표 만들기 →</button>
-                            </div>
                         </div>
                         <div class="bg-white p-6 rounded-lg shadow-lg">
                             <h3 class="text-xl font-bold mb-4">생성 통계</h3>
@@ -166,9 +162,17 @@
                                         <button type="button" data-value="행정 목차" class="outline-btn py-2 px-3 rounded-md text-sm">행정 목차</button>
                                     </div>
                                 </div>
-                                <div>
+                                <div class="mt-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">분류</label>
+                                    <select id="plan-category" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 sm:text-sm">
+                                        <option value="정책 기획">정책 기획</option>
+                                        <option value="행사 기획">행사 기획</option>
+                                        <option value="장학 기획">장학 기획</option>
+                                        <option value="업무 보고">업무 보고</option>
+                                    </select>
+                                </div>
+                                <div class="mt-4">
                                     <label class="block text-sm font-medium text-gray-700 mb-2">계획서 주제</label>
-                                    <div id="plan-type-buttons" class="grid grid-cols-2 gap-2"></div>
                                     <input type="text" id="custom-plan-type" placeholder="계획서 주제를 직접 입력하세요" class="block w-full mt-2 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 sm:text-sm">
                                 </div>
                                 
@@ -451,8 +455,6 @@
         const tableView = document.getElementById('table-view');
         const officialView = document.getElementById('official-view');
         const letterView = document.getElementById('letter-view');
-        const goToGeneratorBtn = document.getElementById('go-to-generator-btn');
-        const goToTableBtn = document.getElementById('go-to-table-btn');
         const recentPlansList = document.getElementById('recent-plans-list');
         const form = document.getElementById('plan-form');
         const generateBtn = document.getElementById('generate-btn');
@@ -469,8 +471,8 @@
         const toast = document.getElementById('toast');
         const outputPanel = document.getElementById('output-panel');
         const schoolLevelButtons = document.getElementById('school-level-buttons');
-        const planTypeButtons = document.getElementById('plan-type-buttons');
         const outlineButtons = document.getElementById('outline-buttons');
+        const planCategorySelect = document.getElementById('plan-category');
         const customPlanTypeInput = document.getElementById('custom-plan-type');
         const keywordsContainer = document.getElementById('keywords-container');
         const addKeywordBtn = document.getElementById('add-keyword-btn');
@@ -662,8 +664,6 @@
         navTable.addEventListener('click', (e) => { e.preventDefault(); switchView('table'); });
         navOfficial.addEventListener('click', (e) => { e.preventDefault(); switchView('official'); });
         navLetter.addEventListener('click', (e) => { e.preventDefault(); switchView('letter'); });
-        goToGeneratorBtn.addEventListener('click', () => switchView('plan'));
-        goToTableBtn.addEventListener('click', () => switchView('table'));
 
         // --- TABLE GENERATOR LOGIC ---
         if (tableForm) {
@@ -678,6 +678,8 @@
                 const cols = colMatch ? colMatch[1] : null;
                 topic = topic.replace(/\[행\]\s*\d+/, '').replace(/\[열\]\s*\d+/, '').trim();
                 if (!topic) return;
+
+                showToast('생성 중입니다..');
 
                 let prompt = `다음 조건에 맞는 표를 마크다운 형식으로 작성해줘.\n주제: ${topic}`;
                 if (rows) prompt += `\n행 수: ${rows}`;
@@ -746,6 +748,7 @@
                 if (!currentTableMarkdown) return;
                 const userPrompt = tableModifyPrompt.value.trim();
                 if (!userPrompt) return;
+                showToast('수정 중입니다..');
                 const prompt = `다음 마크다운 표를 사용자의 요청에 맞게 수정해줘.\n표:\n${currentTableMarkdown}\n\n요청: ${userPrompt}\n\n수정된 표를 마크다운 표로만 출력해줘.`;
                 try {
                     const response = await fetch('/.netlify/functions/generatePlan', {
@@ -1618,13 +1621,6 @@
 
         // --- GENERATOR LOGIC ---
         
-        const populateSelects = () => {
-            const planTypes = ['교육과정 운영계획', '학교폭력 예방 교육 계획', '진로 체험 활동 계획', '디지털 리터러시 교육 계획', '기초학력 향상 지원 계획', '다문화 교육 활동 계획'];
-            planTypeButtons.innerHTML = planTypes.map(type => `<button type="button" data-value="${type}" class="plan-type-btn py-2 px-3 rounded-md text-sm">${type}</button>`).join('');
-            const firstBtn = planTypeButtons.querySelector('button');
-            if (firstBtn) firstBtn.classList.add('active');
-        };
-
         schoolLevelButtons.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
                 schoolLevelButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
@@ -1632,26 +1628,10 @@
             }
         });
 
-        planTypeButtons.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                planTypeButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-                e.target.classList.add('active');
-                // Clear custom topic input when a preset topic is chosen
-                customPlanTypeInput.value = '';
-            }
-        });
-
         outlineButtons.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
                 outlineButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
                 e.target.classList.add('active');
-            }
-        });
-
-        // When user types a custom topic, deselect all preset topic buttons
-        customPlanTypeInput.addEventListener('input', () => {
-            if (customPlanTypeInput.value.trim()) {
-                planTypeButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
             }
         });
 
@@ -1680,18 +1660,9 @@
             
             formError.classList.add('hidden');
 
-            const selectedPlanBtn = planTypeButtons.querySelector('.active');
-            const selectedPlanType = selectedPlanBtn ? selectedPlanBtn.dataset.value : '';
-            const customPlan = customPlanTypeInput.value.trim();
-            let planType = '';
-            if (selectedPlanType && customPlan) {
-                planType = `${selectedPlanType} ${customPlan}`;
-            } else if (selectedPlanType) {
-                planType = selectedPlanType;
-            } else if (customPlan) {
-                planType = customPlan;
-            } else {
-                formError.textContent = '계획서 주제를 선택하거나 입력해주세요.';
+            const planType = customPlanTypeInput.value.trim();
+            if (!planType) {
+                formError.textContent = '계획서 주제를 입력해주세요.';
                 formError.classList.remove('hidden');
                 return;
             }
@@ -1708,6 +1679,7 @@
             loadingIndicator.style.display = 'flex';
             generateBtn.disabled = true;
             generateBtn.innerHTML = `<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div><span class="ml-2">생성 중...</span>`;
+            showToast('생성 중입니다..');
 
             try {
                 let prompt = `당신은 대한민국의 유능한 교사입니다. 다음 조건에 맞춰 '${schoolLevel} ${planType}' 초안을 작성해 주세요.
@@ -2049,6 +2021,7 @@ async function saveCurrentPlan() {
                 if (!currentPlanId) return;
                 const userPrompt = planModifyPrompt.value.trim();
                 if (!userPrompt) return;
+                showToast('수정 중입니다..');
                 const target = planModifyTarget.value;
                 let prompt;
                 if (target === '전체') {
@@ -2213,7 +2186,6 @@ async function saveCurrentPlan() {
         });
 
         // --- INITIALIZATION ---
-        populateSelects();
     </script>
 </body>
 </html>
