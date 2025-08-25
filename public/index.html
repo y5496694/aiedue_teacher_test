@@ -110,7 +110,7 @@
                         <a href="#home" id="nav-home" class="nav-link">홈</a>
                         <a href="#plan" id="nav-plan" class="nav-link">계획서</a>
                         <a href="#table" id="nav-table" class="nav-link">[한글] 표 만들기</a>
-                        <a href="#official" id="nav-official" class="nav-link">공문서</a>
+                        <a href="#official" id="nav-official" class="nav-link">기안문</a>
                         <a href="#letter" id="nav-letter" class="nav-link">가정통신문</a>
                         <a href="#lesson" id="nav-lesson" class="nav-link">교수학습 지도안</a>
                         <button id="logout-btn" class="text-sm bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded-md transition-colors">로그아웃</button>
@@ -288,7 +288,7 @@
                 <!-- Official Docs View -->
                 <div id="official-view" class="hidden">
                     <div class="container mx-auto p-6">
-                        <h2 class="text-3xl font-bold mb-6">공문서</h2>
+                        <h2 class="text-3xl font-bold mb-6">기안문</h2>
                         <div class="flex flex-col lg:flex-row gap-6">
                             <!-- Input & Modify Section -->
                             <aside class="w-full lg:w-1/3 space-y-6">
@@ -297,7 +297,7 @@
                                     <form id="official-form" class="space-y-4">
                                         <div>
                                             <label for="official-topic" class="block text-sm font-medium text-gray-700">주제</label>
-                                            <textarea id="official-topic" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="공문서 주제를 입력하세요" required></textarea>
+                                            <textarea id="official-topic" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md p-2" placeholder="기안문 주제를 입력하세요" required></textarea>
                                         </div>
                                         <div>
                                             <label for="official-reference" class="block text-sm font-medium text-gray-700">근거 (선택)</label>
@@ -308,7 +308,7 @@
                                             <div id="attachments-container" class="space-y-2"></div>
                                             <button type="button" id="add-attachment-btn" class="mt-2 text-sm text-blue-600 hover:underline">+ 추가</button>
                                         </div>
-                                        <button type="submit" id="generate-official-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 공문서 생성</button>
+                                        <button type="submit" id="generate-official-btn" class="w-full bg-[#7A9D54] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#6a8a4a]">AI 기안문 생성</button>
                                     </form>
                                 </div>
 
@@ -1012,7 +1012,7 @@
                     .map(input => input.files[0]?.name)
                     .filter(Boolean);
 
-                let prompt = `다음 공문서 예시를 참고하여 공문서 기안을 작성해줘.\n예시:\n${officialDocExamples}\n\n주제: ${topic}`;
+                let prompt = `다음 기안문 예시를 참고하여 기안문을 작성해줘.\n예시:\n${officialDocExamples}\n\n주제: ${topic}`;
                 if (agency || docNumber || date) prompt += `\n근거: ${agency}-${docNumber}(${date})`;
                 if (attachments.length) prompt += `\n첨부파일: ${attachments.join(', ')}`;
                 prompt += `\n형식:\n제목 ${topic}\n1. 관련: [근거]\n2. ${topic}을 반영한 내용`;
@@ -1128,7 +1128,7 @@
                 const userPrompt = officialModifyPrompt.value.trim();
                 if (!userPrompt) return;
                 const currentContent = `${currentOfficialTitle}\n${currentOfficialMarkdown}`;
-                const prompt = `다음 공문서 기안을 사용자의 요청에 맞게 수정해줘.\n공문서:\n${currentContent}\n\n요청: ${userPrompt}\n\n수정된 공문서를 동일한 형식(첫 줄은 제목)으로 마크다운으로 출력해줘.`;
+                const prompt = `다음 기안문을 사용자의 요청에 맞게 수정해줘.\n기안문:\n${currentContent}\n\n요청: ${userPrompt}\n\n수정된 기안문을 동일한 형식(첫 줄은 제목)으로 마크다운으로 출력해줘.`;
                 try {
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
