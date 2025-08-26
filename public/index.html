@@ -1726,22 +1726,7 @@
             showToast('생성 중입니다..');
 
             try {
-                let prompt = `당신은 대한민국의 유능한 교사입니다. 다음 조건에 맞춰 '${schoolLevel} ${planType}' 초안을 작성해 주세요.
-
-**출력 형식:**
-- 전체 계획서의 제목은 'TITLE: [${currentYear+1}학년도 ${planType}]'과 같이 간결한 형식으로 첫 줄에 명시해 주세요.
-- 내용은 반드시 다음 5개의 섹션으로 나누어 작성하고, 각 섹션 제목은 '## 1. 목적'과 같이 '##' 마크다운 헤더를 사용해야 합니다.
-- 섹션 순서: 1. 목적, 2. 운영방침, 3. 세부 운영 계획, 4. 예산, 5. 기대효과
-
-**섹션별 작성 조건:**
-1.  **목적**: 계획의 핵심 목표를 명확하고 간결하게箇条書き(bullet points) 형식으로 제시하세요.
-2.  **운영방침**: 계획을 실행하기 위한 기본 원칙과 방향을 箇条書き 형식으로 제시하세요.
-3.  **세부 운영 계획**: 관련 내용을 간단한 문단으로 설명한 뒤, '구분', '추진 내용', '세부 추진 계획', '시기', '대상' 등의 항목을 포함한 Markdown 테이블을 추가하세요.
-4.  **예산**: 예산 편성 방향을 짧게 서술하고, 이어서 '항목', '산출 근거', '예산액(원)', '비고'를 포함한 Markdown 테이블을 제공하세요. '산출 근거'는 '10000원*일*명'과 같이 금액*일*명 형태의 곱셈 식으로 작성하세요. 실제적인 예산을 편성해야 합니다.
-5.  **기대효과**: 계획 실행을 통해 예상되는 긍정적인 결과를 箇条書き 형식으로 구체적으로 서술하세요.
-- **핵심 키워드**: '${keywords.join(', ')}'를 계획서 전반에 자연스럽게 반영해주세요.
-- **중요**: 생성하는 모든 텍스트에서 마크다운 굵은 글씨(**)를 사용하지 마세요. 모든 내용은 일반 텍스트로만 작성해주세요.
-`;
+                let prompt = '';
 
                 // Override prompt based on selected outline
                 const outlineName = outlineButtons.querySelector('.active').dataset.value;
@@ -1758,21 +1743,25 @@
                 prompt += `- 섹션 순서: ${outline.map((s, i) => `${i+1}. ${s.title}`).join(', ')}\n\n`;
                 prompt += `**섹션별 작성 조건:**\n`;
                 outline.forEach((sec, idx) => {
-                    switch(sec.type) {
+                    switch (sec.type) {
+                        case 'bullet':
+                            prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하고, 각 항목은 '~함' 또는 '~한다'와 같이 명료한 말투로 끝나며 두 가지 이상 세부 내용을 포함하세요.\n`;
+                            break;
                         case 'tablePlan':
-                            prompt += `${idx+1}.  **${sec.title}**: 관련 내용을 간단한 문단으로 설명한 뒤, '구분', '추진 내용', '세부 추진 계획', '시기', '대상' 항목을 포함한 Markdown 테이블을 추가하세요.\n`;
+                            prompt += `${idx + 1}.  **${sec.title}**: 관련 내용을 간단한 문단으로 설명한 뒤, '구분', '추진 내용', '세부 추진 계획', '세부 추진 과제', '시기', '대상' 항목을 포함한 Markdown 테이블을 추가하세요. '세부 추진 계획'과 '세부 추진 과제' 칸은 불릿 리스트(-)로 세밀하고 풍부하게 작성하세요.\n`;
                             break;
                         case 'tableBudget':
-                            prompt += `${idx+1}.  **${sec.title}**: 예산 편성 방향을 짧게 서술하고, 이어서 '항목', '산출 근거', '예산액(원)', '비고'를 포함한 Markdown 테이블을 제공하세요. '산출 근거'는 '10000원*일*명'과 같이 금액*일*명 형태의 곱셈 식으로 작성하세요.\n`;
+                            prompt += `${idx + 1}.  **${sec.title}**: 예산 편성 방향을 짧게 서술하고, 이어서 '항목', '산출 근거', '예산액(원)', '비고'를 포함한 Markdown 테이블을 제공하세요. '산출 근거'는 '10000원*일*명'과 같이 금액*일*명 형태의 곱셈 식으로 작성하세요.\n`;
                             break;
                         case 'tableSchedule':
-                            prompt += `${idx+1}.  **${sec.title}**: 관련 내용을 간단히 설명하고, '월', '추진 내용' 항목을 포함한 Markdown 테이블을 추가하세요.\n`;
+                            prompt += `${idx + 1}.  **${sec.title}**: 관련 내용을 간단히 설명하고, '월', '추진 내용' 항목을 포함한 Markdown 테이블을 추가하세요. '추진 내용'은 불릿 리스트(-) 형식으로 작성하세요.\n`;
                             break;
                         default:
-                            prompt += `${idx+1}.  **${sec.title}**: 계획의 핵심 내용을 구체적으로 서술하세요.\n`;
+                            prompt += `${idx + 1}.  **${sec.title}**: 계획의 핵심 내용을 구체적으로 서술하세요.\n`;
                     }
                 });
                 prompt += `- **핵심 키워드**: '${keywords.join(', ')}'를 계획서 전반에 자연스럽게 반영해주세요.\n`;
+                prompt += `- 모든 문장은 공손한 표현이 아닌 서술형으로 끝나며, '~함' 또는 '~한다'와 같이 명료한 말투로 작성하세요.\n`;
                 prompt += `- **중요**: 생성하는 모든 텍스트에서 마크다운 굵은 글씨(**)를 사용하지 마세요. 모든 내용은 일반 텍스트로만 작성해주세요.`;
 
                 const apiUrl = `/.netlify/functions/generatePlan`;
@@ -1928,7 +1917,7 @@
             let finalHtml = '';
             let inList = false;
             let listType = null; // 'ul' or 'ol'
-            const lines = markdown.split('\n');
+            const lines = markdown.replace(/<br>/g, '\n').split('\n');
 
             lines.forEach(line => {
                 const trimmedLine = line.trim();
@@ -1984,7 +1973,7 @@
             body.forEach(row => {
                 tableHtml += '<tr>';
                 for (let i = 0; i < header.length; i++) {
-                    tableHtml += `<td>${row[i] || ''}</td>`;
+                    tableHtml += `<td>${markdownToHtml(row[i] || '')}</td>`;
                 }
                 tableHtml += '</tr>';
             });
@@ -2009,7 +1998,7 @@
             body.forEach(row => {
                 tableHtml += '<tr>';
                 for (let i = 0; i < header.length; i++) {
-                    tableHtml += `<td style="border: 1px solid black; padding: 8px;">${row[i] || ''}</td>`;
+                    tableHtml += `<td style="border: 1px solid black; padding: 8px;">${markdownToHtml(row[i] || '')}</td>`;
                 }
                 tableHtml += '</tr>';
             });
