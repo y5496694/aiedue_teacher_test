@@ -34,7 +34,7 @@
         .plan-section-content th,
         .plan-section-content td { border: 1px solid #cbd5e1; padding: 0.75rem; text-align: left; }
         .plan-section-content th { background-color: #f1f5f9; font-weight: 600; }
-        .edit-btn, .copy-section-btn {
+        .edit-btn, .copy-section-btn, .expand-btn, .shrink-btn {
             background-color: #e2e8f0;
             color: #475569;
             border: none;
@@ -45,7 +45,7 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        .edit-btn:hover, .copy-section-btn:hover { background-color: #cbd5e1; }
+        .edit-btn:hover, .copy-section-btn:hover, .expand-btn:hover, .shrink-btn:hover { background-color: #cbd5e1; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #7A9D54; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .nav-link { padding: 0.5rem 1rem; border-radius: 0.375rem; transition: background-color 0.2s, color 0.2s; }
@@ -1843,6 +1843,14 @@
                 const controlsDiv = document.createElement('div');
                 controlsDiv.className = 'absolute top-4 right-4 flex gap-2';
 
+                const expandBtn = document.createElement('button');
+                expandBtn.className = 'expand-btn';
+                expandBtn.textContent = '내용 늘리기';
+
+                const shrinkBtn = document.createElement('button');
+                shrinkBtn.className = 'shrink-btn';
+                shrinkBtn.textContent = '내용 줄이기';
+
                 const editBtn = document.createElement('button');
                 editBtn.className = 'edit-btn';
                 editBtn.textContent = '편집';
@@ -1850,7 +1858,9 @@
                 const copyBtn = document.createElement('button');
                 copyBtn.className = 'copy-section-btn';
                 copyBtn.textContent = '복사';
-                
+
+                controlsDiv.appendChild(expandBtn);
+                controlsDiv.appendChild(shrinkBtn);
                 controlsDiv.appendChild(editBtn);
                 controlsDiv.appendChild(copyBtn);
 
@@ -2146,7 +2156,7 @@ async function saveCurrentPlan() {
             }
         }
 
-        planContainer.addEventListener('click', function(e) {
+        planContainer.addEventListener('click', async function(e) {
             const button = e.target.closest('button');
             if (!button) return;
 
@@ -2181,6 +2191,35 @@ async function saveCurrentPlan() {
                     newContentDiv.innerHTML = parseMarkdown(newMarkdown);
                     textarea.replaceWith(newContentDiv);
                     saveCurrentPlan();
+                }
+            } else if (button.classList.contains('expand-btn') || button.classList.contains('shrink-btn')) {
+                if (!contentDiv) return;
+                const isExpand = button.classList.contains('expand-btn');
+                const secTitle = sectionDiv.querySelector('h3').textContent;
+                const secMarkdown = sectionDiv.dataset.markdownContent;
+                const prompt = isExpand
+                    ? `다음 계획서 항목의 내용을 더 자세하게 늘려줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`
+                    : `다음 계획서 항목의 내용을 간략하게 줄여줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
+                try {
+                    showToast(isExpand ? '내용 늘리는 중입니다..' : '내용 줄이는 중입니다..');
+                    const response = await fetch('/.netlify/functions/generatePlan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt })
+                    });
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        const markdown = extractMarkdownFromText(text);
+                        const lines = markdown.split('\n');
+                        if (lines[0].startsWith('##')) lines.shift();
+                        const newContent = lines.join('\n').trim();
+                        sectionDiv.dataset.markdownContent = newContent;
+                        contentDiv.innerHTML = parseMarkdown(newContent);
+                        saveCurrentPlan();
+                    }
+                } catch (err) {
+                    console.error('Section Update Error:', err);
                 }
             }
         });
