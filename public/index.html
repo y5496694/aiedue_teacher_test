@@ -1748,13 +1748,13 @@
                             prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하고, 각 항목은 '~함' 또는 '~한다'와 같이 명료한 말투로 끝나며 두 가지 이상 세부 내용을 포함하세요.\n`;
                             break;
                         case 'tablePlan':
-                            prompt += `${idx + 1}.  **${sec.title}**: 관련 내용을 간단한 문단으로 설명한 뒤, '구분', '추진 내용', '세부 추진 계획', '세부 추진 과제', '시기', '대상' 항목을 포함한 Markdown 테이블을 추가하세요. '세부 추진 계획'과 '세부 추진 과제' 칸은 불릿 리스트(-)로 세밀하고 풍부하게 작성하세요.\n`;
+                            prompt += `${idx + 1}.  **${sec.title}**: 관련 내용을 간단한 문단으로 설명한 뒤, '장소', '일시', '대상', '프로그램'의 소목차를 두고 각 항목에 대한 자세한 설명을 제공하세요. 이어서 동일한 항목을 포함한 Markdown 테이블을 추가하고, '프로그램' 칸은 불릿 리스트(-)로 세밀하게 작성하세요.\n`;
                             break;
                         case 'tableBudget':
                             prompt += `${idx + 1}.  **${sec.title}**: 예산 편성 방향을 짧게 서술하고, 이어서 '항목', '산출 근거', '예산액(원)', '비고'를 포함한 Markdown 테이블을 제공하세요. '산출 근거'는 '10000원*일*명'과 같이 금액*일*명 형태의 곱셈 식으로 작성하세요.\n`;
                             break;
                         case 'tableSchedule':
-                            prompt += `${idx + 1}.  **${sec.title}**: 관련 내용을 간단히 설명하고, '월', '추진 내용' 항목을 포함한 Markdown 테이블을 추가하세요. '추진 내용'은 불릿 리스트(-) 형식으로 작성하세요.\n`;
+                            prompt += `${idx + 1}.  **${sec.title}**: 관련 내용을 간단히 설명하고, '월', '장소', '일시', '대상', '프로그램' 항목을 포함한 Markdown 테이블을 추가하세요. '프로그램' 항목은 불릿 리스트(-) 형식으로 작성하세요.\n`;
                             break;
                         default:
                             prompt += `${idx + 1}.  **${sec.title}**: 계획의 핵심 내용을 구체적으로 서술하세요.\n`;
@@ -2198,8 +2198,8 @@ async function saveCurrentPlan() {
                 const secTitle = sectionDiv.querySelector('h3').textContent;
                 const secMarkdown = sectionDiv.dataset.markdownContent;
                 const prompt = isExpand
-                    ? `다음 계획서 항목의 내용을 더 자세하게 늘려줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`
-                    : `다음 계획서 항목의 내용을 간략하게 줄여줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
+                    ? `다음 계획서 항목의 내용을 더 자세하게 늘려줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하고 필요한 내용을 추가해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`
+                    : `다음 계획서 항목의 내용을 간략하게 줄여줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하고 핵심 내용만 남겨줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
                 try {
                     showToast(isExpand ? '내용 늘리는 중입니다..' : '내용 줄이는 중입니다..');
                     const response = await fetch('/.netlify/functions/generatePlan', {
