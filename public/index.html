@@ -2198,8 +2198,8 @@ async function saveCurrentPlan() {
                 const secTitle = sectionDiv.querySelector('h3').textContent;
                 const secMarkdown = sectionDiv.dataset.markdownContent;
                 const prompt = isExpand
-                    ? `다음 계획서 항목의 내용을 더 자세하게 늘려줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하고 필요한 내용을 추가해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`
-                    : `다음 계획서 항목의 내용을 간략하게 줄여줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하고 핵심 내용만 남겨줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
+                    ? `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하되, 항목의 개수를 늘려줘. 자세한 설명을 추가하는 대신 새로운 불릿이나 표 행을 추가해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`
+                    : `다음 계획서 항목의 내용을 간소화해줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하되, 항목의 개수를 줄여줘. 핵심 항목만 남겨줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
                 try {
                     showToast(isExpand ? '내용 늘리는 중입니다..' : '내용 줄이는 중입니다..');
                     const response = await fetch('/.netlify/functions/generatePlan', {
