@@ -6,6 +6,7 @@
     <title>에이두 티쳐 - AI 학교 운영계획서</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -28,8 +29,25 @@
             border-bottom: 1px solid #e2e8f0;
         }
         .plan-section-content p { margin-bottom: 1rem; line-height: 1.6; }
-        .plan-section-content ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
-        .plan-section-content li { margin-bottom: 0.5rem; }
+        .plan-section-content ul {
+            list-style: none;
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+            padding-left: 0;
+        }
+        .plan-section-content li {
+            margin-bottom: 0.5rem;
+            position: relative;
+            padding-left: 1em;
+        }
+        .plan-section-content li::before {
+            content: "○";
+            position: absolute;
+            left: -1em;
+        }
+        .plan-section-content ol > li > ul > li::before { content: "□"; }
+        .plan-section-content ol > li > ul > li > ul > li::before { content: "○"; }
+        .plan-section-content ol > li > ul > li > ul > li > ul > li::before { content: "-"; }
         .plan-section-content table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
         .plan-section-content th,
         .plan-section-content td { border: 1px solid #cbd5e1; padding: 0.75rem; text-align: left; }
@@ -1894,108 +1912,16 @@
 
         function parseMarkdown(markdown) {
             const plainMarkdown = markdown.replace(/\*\*(.*?)\*\*/g, '$1');
-            if (plainMarkdown.includes('|')) {
-                const lines = plainMarkdown.split('\n');
-                let html = '';
-                let tableBuffer = [];
-                let textBuffer = [];
-
-                const flushText = () => {
-                    if (textBuffer.length) {
-                        html += markdownToHtml(textBuffer.join('\n'));
-                        textBuffer = [];
-                    }
-                };
-
-                const flushTable = () => {
-                    if (tableBuffer.length) {
-                        html += renderMarkdownTable(tableBuffer.join('\n'));
-                        tableBuffer = [];
-                    }
-                };
-
-                lines.forEach(line => {
-                    if (line.includes('|')) {
-                        flushText();
-                        tableBuffer.push(line);
-                    } else {
-                        flushTable();
-                        textBuffer.push(line);
-                    }
-                });
-                flushText();
-                flushTable();
-                return html;
-            }
-            return markdownToHtml(plainMarkdown);
+            return marked.parse(plainMarkdown);
         }
 
         function markdownToHtml(markdown) {
-            let finalHtml = '';
-            let inList = false;
-            let listType = null; // 'ul' or 'ol'
-            const lines = markdown.replace(/<br>/g, '\n').split('\n');
-
-            lines.forEach(line => {
-                const trimmedLine = line.trim();
-
-                if (/^\d+\.\s+/.test(trimmedLine)) {
-                    if (!inList || listType !== 'ol') {
-                        if (inList) finalHtml += listType === 'ul' ? '</ul>' : '</ol>';
-                        finalHtml += '<ol>';
-                        inList = true;
-                        listType = 'ol';
-                    }
-                    finalHtml += `<li>${trimmedLine.replace(/^\d+\.\s+/, '')}</li>`;
-                } else if (/^[\*-]\s+/.test(trimmedLine)) {
-                    if (!inList || listType !== 'ul') {
-                        if (inList) finalHtml += listType === 'ul' ? '</ul>' : '</ol>';
-                        finalHtml += '<ul>';
-                        inList = true;
-                        listType = 'ul';
-                    }
-                    finalHtml += `<li>${trimmedLine.replace(/^[\*-]\s+/, '')}</li>`;
-                } else {
-                    if (inList) {
-                        finalHtml += listType === 'ul' ? '</ul>' : '</ol>';
-                        inList = false;
-                        listType = null;
-                    }
-                    if (trimmedLine) {
-                        finalHtml += `<p>${trimmedLine}</p>`;
-                    }
-                }
-            });
-
-            if (inList) {
-                finalHtml += listType === 'ul' ? '</ul>' : '</ol>';
-            }
-            return finalHtml;
+            const plainMarkdown = markdown.replace(/\*\*(.*?)\*\*/g, '$1');
+            return marked.parse(plainMarkdown);
         }
 
         function renderMarkdownTable(markdown) {
-            const rows = markdown
-                .trim()
-                .split('\n')
-                .filter(row => row.includes('|'))
-                .map(row => row.split('|').slice(1, -1).map(cell => cell.trim()));
-            if (rows.length < 2) return markdownToHtml(markdown);
-
-            const header = rows[0];
-            const body = rows.slice(2);
-            
-            let tableHtml = '<table><thead><tr>';
-            header.forEach(h => tableHtml += `<th>${h}</th>`);
-            tableHtml += '</tr></thead><tbody>';
-            body.forEach(row => {
-                tableHtml += '<tr>';
-                for (let i = 0; i < header.length; i++) {
-                    tableHtml += `<td>${markdownToHtml(row[i] || '')}</td>`;
-                }
-                tableHtml += '</tr>';
-            });
-            tableHtml += '</tbody></table>';
-            return tableHtml;
+            return marked.parse(markdown);
         }
 
         function markdownTableToHtmlClipboard(markdown) {
