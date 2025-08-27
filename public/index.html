@@ -515,7 +515,7 @@
                 { title: "추진 목적", type: "bullet" },
                 { title: "추진 방향", type: "bullet" },
                 { title: "세부 추진 계획", type: "tablePlan" },
-                { title: "예산 운용 계획", type: "tableBudget" },
+                { title: "예산 운영 계획", type: "tableBudget" },
                 { title: "추진 일정", type: "tableSchedule" },
                 { title: "기대효과", type: "bullet" }
             ],
@@ -1775,7 +1775,7 @@
                             prompt += `${idx + 1}.  **${sec.title}**: 소개 문장 없이 '1. 장소', '2. 일시', '3. 대상', '4. 프로그램' 번호를 붙여 각 항목에 대한 자세한 설명을 제공하세요. 이어서 동일한 항목을 포함한 Markdown 테이블을 추가하고, '프로그램' 칸은 불릿 리스트(-)로 세밀하게 작성하며 최소 4개 이상의 항목을 포함하세요.\n`;
                             break;
                         case 'tableBudget':
-                            prompt += `${idx + 1}.  **${sec.title}**: 예산 편성 방향을 짧게 서술하고, 이어서 '항목', '산출 근거', '예산액(원)', '비고'를 포함한 Markdown 테이블을 제공하세요. '산출 근거'는 '10000원*일*명'과 같이 금액*일*명 형태의 곱셈 식으로 작성하세요.\n`;
+                            prompt += `${idx + 1}.  **${sec.title}**: 예산 편성 방향을 짧게 서술하고, 이어서 '순', '사업명', '항목', '산출내역(원)', '예산액(천원)', '비고'를 포함한 Markdown 테이블을 제공하세요. '산출내역(원)'은 '200,000원 × 1대 × 1회'와 같이 곱셈 식으로 작성하세요.\n`;
                             break;
                         case 'tableSchedule':
                             prompt += `${idx + 1}.  **${sec.title}**: 관련 내용을 간단히 설명하고, '월', '장소', '일시', '대상', '프로그램' 항목을 포함한 Markdown 테이블을 추가하세요. '프로그램' 항목은 불릿 리스트(-) 형식으로 작성하고 최소 4개 이상의 항목을 포함하세요.\n`;
@@ -2173,18 +2173,17 @@ async function saveCurrentPlan() {
 
         if (mergePlanBtn) {
             mergePlanBtn.addEventListener('click', () => {
-                const order = ['목적', '운영 방침', '세부 운영 계획', '예산', '기대효과'];
-                let html = `<h1>${planTitle.textContent}</h1>`;
-                order.forEach(name => {
-                    const section = Array.from(planContainer.querySelectorAll('.plan-section'))
-                        .find(sec => sec.querySelector('h3').textContent.includes(name));
-                    if (section) {
-                        html += `<h2>${name}</h2>` + section.querySelector('.plan-section-content').innerHTML;
-                    }
+                const sections = planContainer.querySelectorAll('.plan-section');
+                let text = `# ${planTitle.textContent}\n\n`;
+                sections.forEach(sec => {
+                    const title = sec.querySelector('h3').textContent;
+                    const content = sec.dataset.markdownContent || sec.querySelector('.plan-section-content').innerText.trim();
+                    text += `## ${title}\n${content}\n\n`;
                 });
                 const popup = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
                 if (popup) {
-                    popup.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${planTitle.textContent}</title></head><body><button id="copyHtmlBtn">HTML 복사</button><div id="content">${html}</div><script>document.getElementById('copyHtmlBtn').addEventListener('click',function(){const t=document.createElement('textarea');t.value=document.getElementById('content').innerHTML;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);alert('HTML이 복사되었습니다.');});<\/script></body></html>`);
+                    const escapedText = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                    popup.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${planTitle.textContent}</title></head><body><button id="copyTextBtn">내용 복사</button><pre id="content" style="white-space: pre-wrap;">${escapedText}</pre><script>document.getElementById('copyTextBtn').addEventListener('click',function(){navigator.clipboard.writeText(document.getElementById('content').innerText).then(()=>alert('내용이 복사되었습니다.'));});<\/script></body></html>`);
                     popup.document.close();
                 }
             });
