@@ -1763,18 +1763,24 @@
                 outline.forEach((sec, idx) => {
                     switch (sec.type) {
                         case 'bullet':
-                            if (sec.title.includes('추진 배경') || sec.title.includes('방향') || sec.title.includes('방침')) {
-                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하여 '~함' 또는 '~한다'와 같이 명료한 말투로 끝나며 두 가지 이상 세부 내용을 포함하세요.\n`;
-                            } else if (sec.title.includes('근거')) {
-                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 항목은 '법령', '관련 매뉴얼', '관련 지침', '교육청 지침' 네 가지로만 구성하고, 각 항목마다 근거가 되는 법령 명칭과 조항 번호 또는 매뉴얼·지침명 등 구체적인 내용을 명시하세요.\n`;
+                            if (sec.title.includes('추진 배경')) {
+                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하여 문장이 아닌 명사형 표현으로 '~요구', '~필요', '~증대', '~심화', '~대두' 등으로 끝나게 작성하세요.\n`;
+                            } else if (sec.title.includes('추진 목적')) {
+                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하여 '~실현', '~지원', '~구현', '~확대', '~강화' 등과 같은 명사형 표현으로 끝나게 작성하세요.\n`;
                             } else if (sec.title.includes('기대효과') || sec.title.includes('기대 효과')) {
-                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 아래 문장을 참고하여 교육적 기대 효과를 구체적으로 작성하고, 각 항목은 '~함' 또는 '~한다'와 같이 명료한 말투로 끝나며 두 가지 이상 세부 내용을 포함하세요. 참고 문장: 창의력 사고력을 함양한다.; 배움 중심의 학습 문화를 확산한다.; 학교 내 소통과 협력 문화를 조성한다.; 학생 맞춤형 교육 기회를 마련한다.; 교사와 학생 간 상호작용을 활성화한다.; 교사의 전문성을 강화하여 교육력을 제고한다.; 교사와 학생의 업무 피로도를 감소시킨다.; 학교 폭력 및 갈등 요인을 근절한다.; 학부모와 학생의 만족도를 제고한다.\n`;
+                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 아래 문장을 참고하여 교육적 기대 효과를 구체적으로 작성하고, 각 항목은 '~확대', '~강화', '~도모', '~증대' 등과 같은 명사형 표현으로 끝나게 하세요. 참고 문장: 창의력 사고력을 함양한다.; 배움 중심의 학습 문화를 확산한다.; 학교 내 소통과 협력 문화를 조성한다.; 학생 맞춤형 교육 기회를 마련한다.; 교사와 학생 간 상호작용을 활성화한다.; 교사의 전문성을 강화하여 교육력을 제고한다.; 교사와 학생의 업무 피로도를 감소시킨다.; 학교 폭력 및 갈등 요인을 근절한다.; 학부모와 학생의 만족도를 제고한다.\n`;
+                            } else if (sec.title.includes('방향')) {
+                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하여 '~정립', '~마련', '~추진', '~강화' 등과 같은 명사형 표현으로 끝나게 작성하세요.\n`;
+                            } else if (sec.title.includes('방침')) {
+                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하여 '~운영', '~구성', '~실시', '~지원' 등과 같은 명사형 표현으로 끝나게 작성하세요.\n`;
+                            } else if (sec.title.includes('근거')) {
+                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 각 항목은 관련 법령·계획·조례 등의 제목과 문서 번호, 시행일 등을 괄호 안에 명시한 참고 문헌 형태로 작성하세요. 예시: - (변경)스마트기기 휴대 학습 「디벗 확대 계획」(중등교육과-13191, 2023. 3. 27.)\n`;
                             } else {
                                 prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 '~함' 또는 '~한다'와 같이 명료한 말투로 끝나며 두 가지 이상 세부 내용을 포함하세요.\n`;
                             }
                             break;
                         case 'tablePlan':
-                            prompt += `${idx + 1}.  **${sec.title}**: 소개 문장 없이 '1. 장소', '2. 일시', '3. 대상', '4. 프로그램' 번호를 붙여 각 항목에 대한 자세한 설명을 제공하세요. 이어서 동일한 항목을 포함한 Markdown 테이블을 추가하고, '프로그램' 칸은 불릿 리스트(-)로 세밀하게 작성하며 최소 4개 이상의 항목을 포함하세요.\n`;
+                            prompt += `${idx + 1}.  **${sec.title}**: 추진 과제를 번호 매긴 뒤 각 과제 아래에 '□ What(추진업무)', '○ How(추진 방법)', '○ Who(기관)', '○ When(기간, 일정)', '○ Where(장소)', '○ How(수량, 예산)' 항목을 불릿으로 작성하고, 이어서 '추진 과제', '추진업무', '추진 방법', '기관', '기간', '장소', '수량/예산' 열을 포함한 Markdown 테이블을 추가하세요.\n`;
                             break;
                         case 'tableBudget':
                             prompt += `${idx + 1}.  **${sec.title}**: 예산 편성 방향을 짧게 서술하고, 이어서 '순', '사업명', '항목', '산출내역(원)', '예산액(천원)', '비고'를 포함한 Markdown 테이블을 제공하세요. '산출내역(원)'은 '200,000원 × 1대 × 1회'와 같이 곱셈 식으로 작성하세요.\n`;
@@ -1788,7 +1794,7 @@
                 });
                 prompt += `- **핵심 키워드**: '${keywords.join(', ')}'를 계획서 전반에 자연스럽게 반영해주세요.\n`;
                 prompt += `- 모든 불릿 리스트는 최소 4개 이상의 항목을 포함해야 합니다.\n`;
-                prompt += `- 모든 문장은 공손한 표현이 아닌 서술형으로 끝나며, '~함' 또는 '~한다'와 같이 명료한 말투로 작성하세요.\n`;
+                prompt += `- '추진 배경', '추진 목적', '기대효과', '추진 방향', '추진 방침' 항목은 문장이 아닌 명사형 표현으로 작성하고, 그 밖의 항목은 공손한 표현을 사용하지 말고 '~함' 또는 '~한다'와 같이 서술형으로 작성하세요.\n`;
                 prompt += `- **중요**: 생성하는 모든 텍스트에서 마크다운 굵은 글씨(**)를 사용하지 마세요. 모든 내용은 일반 텍스트로만 작성해주세요.`;
 
                 const apiUrl = `/.netlify/functions/generatePlan`;
@@ -2135,16 +2141,20 @@ async function saveCurrentPlan() {
                 let prompt;
                 if (isExpand) {
                     if (secTitle.includes('추진 배경') || secTitle.includes('방향') || secTitle.includes('방침')) {
-                        prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 리스트는 그대로 유지하고 항목의 개수를 늘리지 말아줘. 대신 각 불릿의 설명을 더욱 구체적으로 작성해줘. 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하며 '~함' 또는 '~한다'와 같이 명료한 말투로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
+                        prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 리스트는 그대로 유지하고 항목의 개수를 늘리지 말아줘. 대신 각 불릿의 표현을 더욱 구체적으로 작성해줘. 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하며 문장이 아닌 명사형 표현으로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
                     } else if (secTitle.includes('추진 목적') || secTitle.includes('기대효과')) {
                         const bulletCount = (secMarkdown.match(/^- /gm) || []).length;
                         const targetCount = Math.ceil(bulletCount * 1.5);
-                        prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 항목들을 유지하면서 새로운 불릿을 추가해 전체 항목 수가 약 ${targetCount}개가 되도록 해줘. 각 항목은 '~함' 또는 '~한다'와 같이 명료한 말투로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
+                        prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 항목들을 유지하면서 새로운 불릿을 추가해 전체 항목 수가 약 ${targetCount}개가 되도록 해줘. 각 항목은 문장이 아닌 명사형 표현으로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
                     } else {
                         prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하되, 항목의 개수를 늘려줘. 자세한 설명을 추가하는 대신 새로운 불릿이나 표 행을 추가해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
                     }
                 } else {
-                    prompt = `다음 계획서 항목의 내용을 간소화해줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하되, 항목의 개수를 줄여줘. 핵심 항목만 남겨줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
+                    let styleInstruction = '';
+                    if (secTitle.includes('추진 배경') || secTitle.includes('추진 목적') || secTitle.includes('기대효과') || secTitle.includes('방향') || secTitle.includes('방침')) {
+                        styleInstruction = ' 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하며 문장이 아닌 명사형 표현으로 끝나게 해줘.';
+                    }
+                    prompt = `다음 계획서 항목의 내용을 간소화해줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하되, 항목의 개수를 줄여줘.${styleInstruction}\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
                 }
                 try {
                     showToast(isExpand ? '내용 늘리는 중입니다..' : '내용 줄이는 중입니다..');
@@ -2160,7 +2170,7 @@ async function saveCurrentPlan() {
                         const lines = markdown.split('\n');
                         if (lines[0].startsWith('##')) lines.shift();
                         let newContent = lines.join('\n').trim();
-                        if (secTitle.includes('추진 배경') || secTitle.includes('방향') || secTitle.includes('방침') || secTitle.includes('추진 목적') || secTitle.includes('기대효과')) {
+                        if (!secTitle.includes('추진 배경') && !secTitle.includes('추진 목적') && !secTitle.includes('기대효과') && !secTitle.includes('방향') && !secTitle.includes('방침')) {
                             newContent = newContent.replace(/합니다\./gm, '한다.').replace(/합니다$/gm, '한다');
                         }
                         sectionDiv.dataset.markdownContent = newContent;
