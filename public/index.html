@@ -2207,7 +2207,11 @@ async function saveCurrentPlan() {
                 let prompt;
                 if (isExpand) {
                     if (secTitle.includes('추진 배경') || secTitle.includes('방향') || secTitle.includes('방침')) {
-                        prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 리스트는 그대로 유지하고 항목의 개수를 늘리지 말아줘. 대신 각 불릿의 설명을 더욱 구체적으로 작성해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
+                        prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 리스트는 그대로 유지하고 항목의 개수를 늘리지 말아줘. 대신 각 불릿의 설명을 더욱 구체적으로 작성해줘. 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하며 '~함' 또는 '~한다'와 같이 명료한 말투로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
+                    } else if (secTitle.includes('추진 목적') || secTitle.includes('기대효과')) {
+                        const bulletCount = (secMarkdown.match(/^- /gm) || []).length;
+                        const targetCount = Math.ceil(bulletCount * 1.5);
+                        prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 항목들을 유지하면서 새로운 불릿을 추가해 전체 항목 수가 약 ${targetCount}개가 되도록 해줘. 각 항목은 '~함' 또는 '~한다'와 같이 명료한 말투로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
                     } else {
                         prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하되, 항목의 개수를 늘려줘. 자세한 설명을 추가하는 대신 새로운 불릿이나 표 행을 추가해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
                     }
@@ -2227,7 +2231,10 @@ async function saveCurrentPlan() {
                         const markdown = extractMarkdownFromText(text);
                         const lines = markdown.split('\n');
                         if (lines[0].startsWith('##')) lines.shift();
-                        const newContent = lines.join('\n').trim();
+                        let newContent = lines.join('\n').trim();
+                        if (secTitle.includes('추진 배경') || secTitle.includes('방향') || secTitle.includes('방침') || secTitle.includes('추진 목적') || secTitle.includes('기대효과')) {
+                            newContent = newContent.replace(/합니다\./gm, '한다.').replace(/합니다$/gm, '한다');
+                        }
                         sectionDiv.dataset.markdownContent = newContent;
                         contentDiv.innerHTML = parseMarkdown(newContent);
                         saveCurrentPlan();
