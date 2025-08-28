@@ -508,6 +508,12 @@
         const planSavedList = document.getElementById('plan-saved-list');
         let currentPlanId = null;
 
+        // Load plan examples to guide dynamic '세부 추진 계획' generation
+        let planExamples = '';
+        fetch('/plan_examples.txt')
+            .then(response => response.text())
+            .then(text => { planExamples = text; });
+
         const planOutlineDefinitions = {
             "기본 목차": [
                 { title: "추진 배경", type: "bullet" },
@@ -1754,6 +1760,9 @@
                 prompt = `당신은 대한민국의 유능한 교사입니다. 다음 조건에 맞춰 '${schoolLevel} ${planType}' 초안을 작성해 주세요.\n\n`;
                 if (focusInstruction) {
                     prompt += `- 분류: ${category}. ${focusInstruction}\n\n`;
+                }
+                if (planExamples) {
+                    prompt += `세부 추진 계획 작성 시 아래 예시를 참고하여 주제에 따라 유동적으로 구성해 주세요.\\n예시:\\n${planExamples}\\n\\n`;
                 }
                 prompt += `**출력 형식:**\n`;
                 prompt += `- 전체 계획서의 제목은 'TITLE: [${currentYear+1}학년도 ${planType}]'과 같이 간결한 형식으로 첫 줄에 명시해 주세요.\n`;
