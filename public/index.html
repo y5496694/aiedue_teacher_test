@@ -52,7 +52,7 @@
         .plan-section-content th,
         .plan-section-content td { border: 1px solid #cbd5e1; padding: 0.75rem; text-align: left; }
         .plan-section-content th { background-color: #f1f5f9; font-weight: 600; }
-        .edit-btn, .copy-section-btn, .expand-btn, .shrink-btn {
+        .edit-btn, .copy-section-btn, .expand-btn, .detail-btn {
             background-color: #e2e8f0;
             color: #475569;
             border: none;
@@ -63,7 +63,7 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        .edit-btn:hover, .copy-section-btn:hover, .expand-btn:hover, .shrink-btn:hover { background-color: #cbd5e1; }
+        .edit-btn:hover, .copy-section-btn:hover, .expand-btn:hover, .detail-btn:hover { background-color: #cbd5e1; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #7A9D54; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .nav-link { padding: 0.5rem 1rem; border-radius: 0.375rem; transition: background-color 0.2s, color 0.2s; }
@@ -188,7 +188,6 @@
                                         <button type="button" data-value="정책 기획" class="category-btn py-1 px-2 rounded text-xs active">정책 기획</button>
                                         <button type="button" data-value="행사 기획" class="category-btn py-1 px-2 rounded text-xs">행사 기획</button>
                                         <button type="button" data-value="장학 기획" class="category-btn py-1 px-2 rounded text-xs">장학 기획</button>
-                                        <button type="button" data-value="업무 보고" class="category-btn py-1 px-2 rounded text-xs">업무 보고</button>
                                     </div>
                                     <div id="category-description" class="mt-2 text-xs text-gray-600"></div>
                                 </div>
@@ -553,15 +552,13 @@
         const categoryExamples = {
             "정책 기획": "예시 주제: 기본계획, 추진계획(활성화 계획, 지원계획)",
             "행사 기획": "예시 주제: 워크숍 계획, 축제 계획, 협의회 계획",
-            "장학 기획": "예시 주제: 컨설팅 계획, 교육 계획, 제작 및 보급 계획",
-            "업무 보고": "예시 주제: 현황, 동향, 경과보고서"
+            "장학 기획": "예시 주제: 컨설팅 계획, 교육 계획, 제작 및 보급 계획"
         };
 
         const categoryFocus = {
             "정책 기획": "목적, 내용, 방법에 주안점을 두어 작성하세요.",
             "행사 기획": "목적, 세부 시행 계획에 주안점을 두어 작성하세요.",
-            "장학 기획": "현장연계성, 장학 내용 등에 주안점을 두어 작성하세요.",
-            "업무 보고": "객관적인 자료와 시사점에 주안점을 두어 작성하세요."
+            "장학 기획": "현장연계성, 장학 내용 등에 주안점을 두어 작성하세요."
         };
 
         function updateOutlineDescription() {
@@ -1795,7 +1792,7 @@
                             prompt += `${idx + 1}.  **${sec.title}**: 예산 편성 방향을 짧게 서술하고, 이어서 '순', '사업명', '항목', '산출내역(원)', '예산액(천원)', '비고'를 포함한 Markdown 테이블을 제공하세요. '산출내역(원)'은 '200,000원 × 1대 × 1회'와 같이 곱셈 식으로 작성하세요.\n`;
                             break;
                         case 'tableSchedule':
-                            prompt += `${idx + 1}.  **${sec.title}**: 관련 내용을 간단히 설명하고, '월', '장소', '일시', '대상', '프로그램' 항목을 포함한 Markdown 테이블을 추가하세요. '프로그램' 항목은 불릿 리스트(-) 형식으로 작성하고 최소 4개 이상의 항목을 포함하세요.\n`;
+                            prompt += `${idx + 1}.  **${sec.title}**: 관련 내용을 간단히 설명하고, '월', '장소', '일시', '대상', '프로그램' 항목을 포함한 Markdown 테이블을 추가하세요. '프로그램' 항목은 각 프로그램의 명칭과 간단한 설명을 포함한 불릿 리스트(-) 형식으로 작성하고 최소 4개 이상의 항목을 포함하세요.\n`;
                             break;
                         default:
                             prompt += `${idx + 1}.  **${sec.title}**: 계획의 핵심 내용을 구체적으로 서술하세요.\n`;
@@ -1889,9 +1886,9 @@
                 expandBtn.className = 'expand-btn';
                 expandBtn.textContent = '내용 늘리기';
 
-                const shrinkBtn = document.createElement('button');
-                shrinkBtn.className = 'shrink-btn';
-                shrinkBtn.textContent = '내용 줄이기';
+                const detailBtn = document.createElement('button');
+                detailBtn.className = 'detail-btn';
+                detailBtn.textContent = '자세하게';
 
                 const editBtn = document.createElement('button');
                 editBtn.className = 'edit-btn';
@@ -1902,7 +1899,7 @@
                 copyBtn.textContent = '복사';
 
                 controlsDiv.appendChild(expandBtn);
-                controlsDiv.appendChild(shrinkBtn);
+                controlsDiv.appendChild(detailBtn);
                 controlsDiv.appendChild(editBtn);
                 controlsDiv.appendChild(copyBtn);
 
@@ -2142,7 +2139,7 @@ async function saveCurrentPlan() {
                     textarea.replaceWith(newContentDiv);
                     saveCurrentPlan();
                 }
-            } else if (button.classList.contains('expand-btn') || button.classList.contains('shrink-btn')) {
+            } else if (button.classList.contains('expand-btn') || button.classList.contains('detail-btn')) {
                 if (!contentDiv) return;
                 const isExpand = button.classList.contains('expand-btn');
                 const secTitle = sectionDiv.querySelector('h3').textContent;
@@ -2159,14 +2156,10 @@ async function saveCurrentPlan() {
                         prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하되, 항목의 개수를 늘려줘. 자세한 설명을 추가하는 대신 새로운 불릿이나 표 행을 추가해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
                     }
                 } else {
-                    let styleInstruction = '';
-                    if (secTitle.includes('추진 배경') || secTitle.includes('추진 목적') || secTitle.includes('기대효과') || secTitle.includes('방향') || secTitle.includes('방침')) {
-                        styleInstruction = ' 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하며 문장이 아닌 명사형 표현으로 끝나게 해줘.';
-                    }
-                    prompt = `다음 계획서 항목의 내용을 간소화해줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하되, 항목의 개수를 줄여줘.${styleInstruction}\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
+                    prompt = `다음 계획서 항목의 내용을 구체적으로 작성해줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하고, 항목의 개수는 늘리지 말며 각 항목의 설명을 더욱 자세하게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
                 }
                 try {
-                    showToast(isExpand ? '내용 늘리는 중입니다..' : '내용 줄이는 중입니다..');
+                    showToast(isExpand ? '내용 늘리는 중입니다..' : '자세하게 작성 중입니다..');
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
