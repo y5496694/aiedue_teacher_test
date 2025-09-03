@@ -595,9 +595,9 @@
 
         const planOutlineDefinitions = {
             "기본 목차": [
+                { title: "목적", type: "bullet" },
                 { title: "추진 배경", type: "bullet" },
                 { title: "추진 근거", type: "bullet" },
-                { title: "추진 목적", type: "bullet" },
                 { title: "추진 방향", type: "bullet" },
                 { title: "세부 추진 계획", type: "tablePlan" },
                 { title: "예산 운영 계획", type: "tableBudget" },
@@ -605,15 +605,17 @@
                 { title: "기대효과", type: "bullet" }
             ],
             "간단 목차": [
-                { title: "근거", type: "bullet" },
                 { title: "목적", type: "bullet" },
+                { title: "추진 배경", type: "bullet" },
+                { title: "추진 근거", type: "bullet" },
                 { title: "방침", type: "bullet" },
                 { title: "세부 추진 계획", type: "tablePlan" },
                 { title: "기대효과", type: "bullet" }
             ],
             "행정 목차": [
                 { title: "목적", type: "bullet" },
-                { title: "근거", type: "bullet" },
+                { title: "추진 배경", type: "bullet" },
+                { title: "추진 근거", type: "bullet" },
                 { title: "방침", type: "bullet" },
                 { title: "세부 추진 계획", type: "tablePlan" },
                 { title: "기대 효과", type: "bullet" },
@@ -1851,7 +1853,7 @@
                         case 'bullet':
                             if (sec.title.includes('추진 배경')) {
                                 prompt1 += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하여 문장이 아닌 명사형 표현으로 '~요구', '~필요', '~증대', '~심화', '~대두' 등으로 끝나게 작성하세요.\\n`;
-                            } else if (sec.title.includes('추진 목적')) {
+                            } else if (sec.title.includes('목적')) {
                                 prompt1 += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하여 '~실현', '~지원', '~구현', '~확대', '~강화' 등과 같은 명사형 표현으로 끝나게 작성하세요.\\n`;
                             } else if (sec.title.includes('기대효과') || sec.title.includes('기대 효과')) {
                                 prompt1 += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 아래 문장을 참고하여 교육적 기대 효과를 구체적으로 작성하고, 각 항목은 '~확대', '~강화', '~도모', '~증대' 등과 같은 명사형 표현으로 끝나게 하세요. 참고 문장: 창의력 사고력을 함양한다.; 배움 중심의 학습 문화를 확산한다.; 학교 내 소통과 협력 문화를 조성한다.; 학생 맞춤형 교육 기회를 마련한다.; 교사와 학생 간 상호작용을 활성화한다.; 교사의 전문성을 강화하여 교육력을 제고한다.; 교사와 학생의 업무 피로도를 감소시킨다.; 학교 폭력 및 갈등 요인을 근절한다.; 학부모와 학생의 만족도를 제고한다.\\n`;
@@ -1877,7 +1879,7 @@
                 });
                 prompt1 += `- **핵심 키워드**: '${keywords.join(', ')}'를 계획서 전반에 자연스럽게 반영해주세요.\\n`;
                 prompt1 += `- 모든 불릿 리스트는 최소 4개 이상의 항목을 포함해야 합니다.\\n`;
-                prompt1 += `- '추진 배경', '추진 목적', '기대효과', '추진 방향', '추진 방침' 항목은 문장이 아닌 명사형 표현으로 작성하고, 그 밖의 항목은 공손한 표현을 사용하지 말고 '~함' 또는 '~한다'와 같이 서술형으로 작성하세요.\\n`;
+                prompt1 += `- '목적', '추진 배경', '기대효과', '추진 방향', '추진 방침' 항목은 문장이 아닌 명사형 표현으로 작성하고, 그 밖의 항목은 공손한 표현을 사용하지 말고 '~함' 또는 '~한다'와 같이 서술형으로 작성하세요.\\n`;
                 prompt1 += `- **중요**: 생성하는 모든 텍스트에서 마크다운 굵은 글씨(**)를 사용하지 마세요. 모든 내용은 일반 텍스트로만 작성해주세요.`;
 
                 const apiUrl = `/.netlify/functions/generatePlan`;
@@ -1920,6 +1922,9 @@
                 prompt2 += `다음 항목(${nextSection.title}) 내용:\\n${nextSection.content}\\n\\n`;
                 if (detailPlanExamples) {
                     prompt2 += `세부 예시:\\n${detailPlanExamples}\\n\\n`;
+                }
+                if (planExamples) {
+                    prompt2 += `계획 예시:\\n${planExamples}\\n\\n`;
                 }
                 prompt2 += `'세부 추진 계획'은 위의 정보만을 참고하여 작성해 주세요. '## 세부 추진 계획' 형식의 마크다운으로 출력해 주세요.`;
 
@@ -2278,7 +2283,7 @@ async function saveCurrentPlan() {
                 if (isExpand) {
                     if (secTitle.includes('추진 배경') || secTitle.includes('방향') || secTitle.includes('방침')) {
                         prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 리스트는 그대로 유지하고 항목의 개수를 늘리지 말아줘. 대신 각 불릿의 표현을 더욱 구체적으로 작성해줘. 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하며 문장이 아닌 명사형 표현으로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
-                    } else if (secTitle.includes('추진 목적') || secTitle.includes('기대효과')) {
+                    } else if (secTitle.includes('목적') || secTitle.includes('기대효과')) {
                         const bulletCount = (secMarkdown.match(/^- /gm) || []).length;
                         const targetCount = Math.ceil(bulletCount * 1.5);
                         prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 항목들을 유지하면서 새로운 불릿을 추가해 전체 항목 수가 약 ${targetCount}개가 되도록 해줘. 각 항목은 문장이 아닌 명사형 표현으로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
@@ -2302,7 +2307,7 @@ async function saveCurrentPlan() {
                         const lines = markdown.split('\n');
                         if (lines[0].startsWith('##')) lines.shift();
                         let newContent = lines.join('\n').trim();
-                        if (!secTitle.includes('추진 배경') && !secTitle.includes('추진 목적') && !secTitle.includes('기대효과') && !secTitle.includes('방향') && !secTitle.includes('방침')) {
+                        if (!secTitle.includes('추진 배경') && !secTitle.includes('목적') && !secTitle.includes('기대효과') && !secTitle.includes('방향') && !secTitle.includes('방침')) {
                             newContent = newContent.replace(/합니다\./gm, '한다.').replace(/합니다$/gm, '한다');
                         }
                         sectionDiv.dataset.markdownContent = newContent;
