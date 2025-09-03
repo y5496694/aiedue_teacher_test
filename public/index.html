@@ -182,7 +182,8 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-2">목차</label>
                                     <div id="outline-buttons" class="flex flex-wrap gap-2">
                                         <button type="button" data-value="기본 목차" class="outline-btn py-1 px-2 rounded text-xs active">기본 목차</button>
-                                        <button type="button" data-value="간단 목차" class="outline-btn py-1 px-2 rounded text-xs">간단 목차</button>
+                                        <button type="button" data-value="간단 목차A" class="outline-btn py-1 px-2 rounded text-xs">간단 목차A</button>
+                                        <button type="button" data-value="간단 목차B" class="outline-btn py-1 px-2 rounded text-xs">간단 목차B</button>
                                         <button type="button" data-value="행정 목차" class="outline-btn py-1 px-2 rounded text-xs">행정 목차</button>
                                     </div>
                                     <div id="outline-description" class="mt-2 text-xs text-gray-600"></div>
@@ -595,27 +596,33 @@
 
         const planOutlineDefinitions = {
             "기본 목차": [
-                { title: "목적", type: "bullet" },
                 { title: "추진 배경", type: "bullet" },
                 { title: "추진 근거", type: "bullet" },
+                { title: "추진 목적", type: "bullet" },
                 { title: "추진 방향", type: "bullet" },
                 { title: "세부 추진 계획", type: "tablePlan" },
                 { title: "예산 운영 계획", type: "tableBudget" },
                 { title: "추진 일정", type: "tableSchedule" },
                 { title: "기대효과", type: "bullet" }
             ],
-            "간단 목차": [
+            "간단 목차A": [
+                { title: "근거", type: "bullet" },
                 { title: "목적", type: "bullet" },
-                { title: "추진 배경", type: "bullet" },
-                { title: "추진 근거", type: "bullet" },
                 { title: "방침", type: "bullet" },
                 { title: "세부 추진 계획", type: "tablePlan" },
                 { title: "기대효과", type: "bullet" }
             ],
+            "간단 목차B": [
+                { title: "추진 근거", type: "bullet" },
+                { title: "추진 목적", type: "bullet" },
+                { title: "추진 방침", type: "bullet" },
+                { title: "주요 추진 과제", type: "bullet" },
+                { title: "추진 일정", type: "tableSchedule" },
+                { title: "기대 효과", type: "bullet" }
+            ],
             "행정 목차": [
                 { title: "목적", type: "bullet" },
-                { title: "추진 배경", type: "bullet" },
-                { title: "추진 근거", type: "bullet" },
+                { title: "근거", type: "bullet" },
                 { title: "방침", type: "bullet" },
                 { title: "세부 추진 계획", type: "tablePlan" },
                 { title: "기대 효과", type: "bullet" },
@@ -1822,155 +1829,102 @@
             showToast('생성 중입니다..');
 
             try {
+                let prompt = '';
                 const outlineName = outlineButtons.querySelector('.active').dataset.value;
                 const outline = planOutlineDefinitions[outlineName];
                 const category = planCategoryInput.value;
                 const focusInstruction = categoryFocus[category] || '';
-
-                const detailIdx = outline.findIndex(sec => sec.type === 'tablePlan');
-                const outlineWithoutDetail = outline.filter((_, i) => i !== detailIdx);
-
-                let prompt1 = `당신은 대한민국의 유능한 교사입니다. 다음 조건에 맞춰 '${schoolLevel} ${planType}' 초안을 작성해 주세요.\n\n`;
+                prompt = `당신은 대한민국의 유능한 교사입니다. 다음 조건에 맞춰 '${schoolLevel} ${planType}' 초안을 작성해 주세요.\n\n`;
                 if (focusInstruction) {
-                    prompt1 += `- 분류: ${category}. ${focusInstruction}\n\n`;
+                    prompt += `- 분류: ${category}. ${focusInstruction}\n\n`;
+                }
+                if (detailPlanExamples) {
+                    prompt += `세부 추진 계획 작성 시 아래 세부 예시를 최우선으로 참고해 주세요.\\n세부 예시:\\n${detailPlanExamples}\\n\\n`;
                 }
                 if (planExamples) {
-                    prompt1 += `추가 예시:\\n${planExamples}\\n\\n`;
+                    prompt += `추가 예시:\\n${planExamples}\\n\\n`;
                 }
                 if (exampleFiles.length) {
-                    prompt1 += `다음 예시 자료의 문법과 내용을 참고하여 작성해 주세요.\\n`;
+                    prompt += `다음 예시 자료의 문법과 내용을 참고하여 작성해 주세요.\\n`;
                     exampleFiles.forEach((file, idx) => {
-                        prompt1 += `예시 ${idx + 1} (${file.name}):\\n${file.text}\\n\\n`;
+                        prompt += `예시 ${idx + 1} (${file.name}):\\n${file.text}\\n\\n`;
                     });
                 }
-                prompt1 += `**출력 형식:**\n`;
-                prompt1 += `- 전체 계획서의 제목은 'TITLE: [${currentYear+1}학년도 ${planType}]'과 같이 간결한 형식으로 첫 줄에 명시해 주세요.\n`;
-                prompt1 += `- 내용은 반드시 다음 ${outlineWithoutDetail.length}개의 섹션으로 나누어 작성하고, 각 섹션 제목은 '## 1. ${outlineWithoutDetail[0].title}'과 같이 '##' 마크다운 헤더를 사용해야 합니다.\n`;
-                prompt1 += `- 섹션 순서: ${outlineWithoutDetail.map((s,i)=>`${i+1}. ${s.title}`).join(', ')}\n\n`;
-                prompt1 += `**섹션별 작성 조건:**\n`;
-                outlineWithoutDetail.forEach((sec, idx) => {
+                prompt += `**출력 형식:**\n`;
+                prompt += `- 전체 계획서의 제목은 'TITLE: [${currentYear+1}학년도 ${planType}]'과 같이 간결한 형식으로 첫 줄에 명시해 주세요.\n`;
+                prompt += `- 내용은 반드시 다음 ${outline.length}개의 섹션으로 나누어 작성하고, 각 섹션 제목은 '## 1. ${outline[0].title}'과 같이 '##' 마크다운 헤더를 사용해야 합니다.\n`;
+                prompt += `- 섹션 순서: ${outline.map((s, i) => `${i+1}. ${s.title}`).join(', ')}\n\n`;
+                prompt += `**섹션별 작성 조건:**\n`;
+                outline.forEach((sec, idx) => {
                     switch (sec.type) {
                         case 'bullet':
                             if (sec.title.includes('추진 배경')) {
-                                prompt1 += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하여 문장이 아닌 명사형 표현으로 '~요구', '~필요', '~증대', '~심화', '~대두' 등으로 끝나게 작성하세요.\\n`;
-                            } else if (sec.title.includes('목적')) {
-                                prompt1 += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하여 '~실현', '~지원', '~구현', '~확대', '~강화' 등과 같은 명사형 표현으로 끝나게 작성하세요.\\n`;
+                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하여 문장이 아닌 명사형 표현으로 '~요구', '~필요', '~증대', '~심화', '~대두' 등으로 끝나게 작성하세요.\\n`;
+                            } else if (sec.title.includes('추진 목적')) {
+                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하여 '~실현', '~지원', '~구현', '~확대', '~강화' 등과 같은 명사형 표현으로 끝나게 작성하세요.\\n`;
                             } else if (sec.title.includes('기대효과') || sec.title.includes('기대 효과')) {
-                                prompt1 += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 아래 문장을 참고하여 교육적 기대 효과를 구체적으로 작성하고, 각 항목은 '~확대', '~강화', '~도모', '~증대' 등과 같은 명사형 표현으로 끝나게 하세요. 참고 문장: 창의력 사고력을 함양한다.; 배움 중심의 학습 문화를 확산한다.; 학교 내 소통과 협력 문화를 조성한다.; 학생 맞춤형 교육 기회를 마련한다.; 교사와 학생 간 상호작용을 활성화한다.; 교사의 전문성을 강화하여 교육력을 제고한다.; 교사와 학생의 업무 피로도를 감소시킨다.; 학교 폭력 및 갈등 요인을 근절한다.; 학부모와 학생의 만족도를 제고한다.\\n`;
+                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 아래 문장을 참고하여 교육적 기대 효과를 구체적으로 작성하고, 각 항목은 '~확대', '~강화', '~도모', '~증대' 등과 같은 명사형 표현으로 끝나게 하세요. 참고 문장: 창의력 사고력을 함양한다.; 배움 중심의 학습 문화를 확산한다.; 학교 내 소통과 협력 문화를 조성한다.; 학생 맞춤형 교육 기회를 마련한다.; 교사와 학생 간 상호작용을 활성화한다.; 교사의 전문성을 강화하여 교육력을 제고한다.; 교사와 학생의 업무 피로도를 감소시킨다.; 학교 폭력 및 갈등 요인을 근절한다.; 학부모와 학생의 만족도를 제고한다.\\n`;
                             } else if (sec.title.includes('방향')) {
-                                prompt1 += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하여 '~정립', '~마련', '~추진', '~강화' 등과 같은 명사형 표현으로 끝나게 작성하세요.\\n`;
+                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하여 '~정립', '~마련', '~추진', '~강화' 등과 같은 명사형 표현으로 끝나게 작성하세요.\\n`;
                             } else if (sec.title.includes('방침')) {
-                                prompt1 += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하여 '~운영', '~구성', '~실시', '~지원' 등과 같은 명사형 표현으로 끝나게 작성하세요.\\n`;
+                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하여 '~운영', '~구성', '~실시', '~지원' 등과 같은 명사형 표현으로 끝나게 작성하세요.\\n`;
                             } else if (sec.title.includes('근거')) {
-                                prompt1 += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 각 항목은 관련 법령·계획·조례 등의 제목과 문서 번호, 시행일 등을 괄호 안에 명시한 참고 문헌 형태로 작성하세요. 예시: - (변경)스마트기기 휴대 학습 「디벗 확대 계획」(중등교육과-13191, 2023. 3. 27.)\\n`;
+                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 각 항목은 관련 법령·계획·조례 등의 제목과 문서 번호, 시행일 등을 괄호 안에 명시한 참고 문헌 형태로 작성하세요. 예시: - (변경)스마트기기 휴대 학습 「디벗 확대 계획」(중등교육과-13191, 2023. 3. 27.)\\n`;
                             } else {
-                                prompt1 += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 '~함' 또는 '~한다'와 같이 명료한 말투로 끝나며 두 가지 이상 세부 내용을 포함하세요.\\n`;
+                                prompt += `${idx + 1}.  **${sec.title}**: 불릿 리스트(-) 형식으로 작성하되, 최소 4개 이상의 항목을 포함하고, 각 항목은 '~함' 또는 '~한다'와 같이 명료한 말투로 끝나며 두 가지 이상 세부 내용을 포함하세요.\\n`;
                             }
                             break;
+                        case 'tablePlan':
+                            prompt += `${idx + 1}.  **${sec.title}**: 추진 과제를 번호 매긴 뒤 각 과제 아래에 '□ 추진업무', '○ 추진 방법', '○ 기관', '○ 기간(일정)', '○ 장소', '○ 수량/예산' 항목을 불릿으로 작성하고, 이어서 '추진 과제', '추진업무', '진 방법', '기관', '기간', '장소', '수량/예산' 열을 포함한 Markdown 테이블을 추가하세요. 추진업무와 추진 방법에는 구체적인 프로그램명을 명시하세요.\\n`;
+                            break;
                         case 'tableBudget':
-                            prompt1 += `${idx + 1}.  **${sec.title}**: 예산 편성 방향을 짧게 서술하고, 이어서 '순', '사업명', '항목', '산출내역(원)', '예산액(천원)', '비고'를 포함한 Markdown 테이블을 제공하세요. '산출내역(원)'은 '200,000원 × 1대 × 1회'와 같이 곱셈 식으로 작성하세요.\\n`;
+                            prompt += `${idx + 1}.  **${sec.title}**: 예산 편성 방향을 짧게 서술하고, 이어서 '순', '사업명', '항목', '산출내역(원)', '예산액(천원)', '비고'를 포함한 Markdown 테이블을 제공하세요. '산출내역(원)'은 '200,000원 × 1대 × 1회'와 같이 곱셈 식으로 작성하세요.\\n`;
                             break;
                         case 'tableSchedule':
-                            prompt1 += `${idx + 1}.  **${sec.title}**: 관련 내용을 간단히 설명하고, '월', '장소', '일시', '대상', '프로그램' 항목을 포함한 Markdown 테이블을 추가하세요. '프로그램' 항목은 각 프로그램의 명칭과 간단한 설명을 포함한 불릿 리스트(-) 형식으로 작성하고 최소 4개 이상의 항목을 포함하세요.\\n`;
+                            prompt += `${idx + 1}.  **${sec.title}**: 관련 내용을 간단히 설명하고, '월', '장소', '일시', '대상', '프로그램' 항목을 포함한 Markdown 테이블을 추가하세요. '프로그램' 항목은 각 프로그램의 명칭과 간단한 설명을 포함한 불릿 리스트(-) 형식으로 작성하고 최소 4개 이상의 항목을 포함하세요.\\n`;
                             break;
                         default:
-                            prompt1 += `${idx + 1}.  **${sec.title}**: 계획의 핵심 내용을 구체적으로 서술하세요.\\n`;
+                            prompt += `${idx + 1}.  **${sec.title}**: 계획의 핵심 내용을 구체적으로 서술하세요.\\n`;
                     }
                 });
-                prompt1 += `- **핵심 키워드**: '${keywords.join(', ')}'를 계획서 전반에 자연스럽게 반영해주세요.\\n`;
-                prompt1 += `- 모든 불릿 리스트는 최소 4개 이상의 항목을 포함해야 합니다.\\n`;
-                prompt1 += `- '목적', '추진 배경', '기대효과', '추진 방향', '추진 방침' 항목은 문장이 아닌 명사형 표현으로 작성하고, 그 밖의 항목은 공손한 표현을 사용하지 말고 '~함' 또는 '~한다'와 같이 서술형으로 작성하세요.\\n`;
-                prompt1 += `- **중요**: 생성하는 모든 텍스트에서 마크다운 굵은 글씨(**)를 사용하지 마세요. 모든 내용은 일반 텍스트로만 작성해주세요.`;
+                prompt += `- **핵심 키워드**: '${keywords.join(', ')}'를 계획서 전반에 자연스럽게 반영해주세요.\\n`;
+                prompt += `- 모든 불릿 리스트는 최소 4개 이상의 항목을 포함해야 합니다.\\n`;
+                prompt += `- '추진 배경', '추진 목적', '기대효과', '추진 방향', '추진 방침' 항목은 문장이 아닌 명사형 표현으로 작성하고, 그 밖의 항목은 공손한 표현을 사용하지 말고 '~함' 또는 '~한다'와 같이 서술형으로 작성하세요.\\n`;
+                prompt += `- **중요**: 생성하는 모든 텍스트에서 마크다운 굵은 글씨(**)를 사용하지 마세요. 모든 내용은 일반 텍스트로만 작성해주세요.`;
 
                 const apiUrl = `/.netlify/functions/generatePlan`;
-
-                const response1 = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: prompt1 })
+                
+                const response = await fetch(apiUrl, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ prompt: prompt }) 
                 });
 
-                if (!response1.ok) {
-                    const err = await response1.json();
-                    throw new Error(err.error?.message || `API 요청 실패: ${response1.status}`);
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error?.message || `API 요청 실패: ${response.status}`);
                 }
-                const result1 = await response1.json();
-                if (!result1.candidates?.[0]?.content?.parts?.[0]?.text) {
+                const result = await response.json();
+                
+                if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    const rawText = result.candidates[0].content.parts[0].text;
+                    displayContent(rawText, planType);
+                    
+                    const docRef = await addDoc(collection(db, "users", user.uid, "plans"), {
+                        title: planTitle.textContent,
+                        planType: planType,
+                        createdAt: serverTimestamp(),
+                        rawContent: rawText
+                    });
+                    currentPlanId = docRef.id;
+                    loadAndDisplayPlans(); // Refresh recent plans list
+                    outputPanel.scrollIntoView({ behavior: 'smooth' });
+                } else if (result.candidates?.[0]?.finishReason) {
+                     throw new Error(`생성이 중단되었습니다. 이유: ${result.candidates[0].finishReason}. 다른 키워드를 사용해 보세요.`);
+                }
+                else {
                     throw new Error('AI로부터 유효한 응답을 받지 못했습니다.');
                 }
-                const rawText1 = result1.candidates[0].content.parts[0].text;
-
-                const parseSections = (text) => {
-                    const titleMatch = text.match(/^TITLE:\s*(.*)/m);
-                    const title = titleMatch && titleMatch[1] ? titleMatch[1].trim() : planType;
-                    let body = titleMatch ? text.substring(titleMatch[0].length).trim() : text.trim();
-                    const sectionTexts = body.split(/^##\s/m).filter(s => s.trim() !== '');
-                    const sections = sectionTexts.map(secText => {
-                        const lines = secText.trim().split('\n');
-                        const secTitle = lines.shift().trim();
-                        return { title: secTitle, content: lines.join('\n').trim() };
-                    });
-                    return { title, sections };
-                };
-
-                const parsed1 = parseSections(rawText1);
-                const prevSection = parsed1.sections[detailIdx - 1];
-                const nextSection = parsed1.sections[detailIdx];
-
-                let prompt2 = `주제: ${planType}\\n\\n`;
-                prompt2 += `이전 항목(${prevSection.title}) 내용:\\n${prevSection.content}\\n\\n`;
-                prompt2 += `다음 항목(${nextSection.title}) 내용:\\n${nextSection.content}\\n\\n`;
-                if (detailPlanExamples) {
-                    prompt2 += `세부 예시:\\n${detailPlanExamples}\\n\\n`;
-                }
-                if (planExamples) {
-                    prompt2 += `계획 예시:\\n${planExamples}\\n\\n`;
-                }
-                prompt2 += `'세부 추진 계획'은 위의 정보만을 참고하여 작성해 주세요. '## 세부 추진 계획' 형식의 마크다운으로 출력해 주세요.`;
-
-                const response2 = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: prompt2 })
-                });
-
-                if (!response2.ok) {
-                    const err = await response2.json();
-                    throw new Error(err.error?.message || `API 요청 실패: ${response2.status}`);
-                }
-                const result2 = await response2.json();
-                const detailRaw = result2.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!detailRaw) {
-                    throw new Error('AI로부터 세부 추진 계획 응답을 받지 못했습니다.');
-                }
-                let detailContent = detailRaw.trim();
-                const detailMatch = detailContent.match(/^##\s*세부\s*추진\s*계획\s*/m);
-                if (detailMatch) {
-                    detailContent = detailContent.substring(detailMatch[0].length).trim();
-                }
-
-                const finalSections = [
-                    ...parsed1.sections.slice(0, detailIdx),
-                    { title: '세부 추진 계획', content: detailContent },
-                    ...parsed1.sections.slice(detailIdx)
-                ];
-
-                let finalRawText = `TITLE: ${parsed1.title}\\n\\n`;
-                finalSections.forEach(sec => {
-                    finalRawText += `## ${sec.title}\\n${sec.content}\\n\\n`;
-                });
-
-                displayContent(finalRawText, planType);
-
-                const docRef = await addDoc(collection(db, "users", user.uid, "plans"), {
-                    title: planTitle.textContent,
-                    planType: planType,
-                    createdAt: serverTimestamp(),
-                    rawContent: finalRawText
-                });
-                currentPlanId = docRef.id;
-                loadAndDisplayPlans();
-                outputPanel.scrollIntoView({ behavior: 'smooth' });
             } catch (error) {
                 console.error("Generation/Saving Error:", error);
                 errorMessageDiv.classList.remove('hidden');
@@ -1994,7 +1948,7 @@
             
             planContainer.innerHTML = '';
 
-            const sections = content.split(/^##\s*/m).filter(s => s.trim() !== '');
+            const sections = content.split(/^##\s/m).filter(s => s.trim() !== '');
             const sectionTitles = [];
 
             sections.forEach(sectionText => {
@@ -2283,7 +2237,7 @@ async function saveCurrentPlan() {
                 if (isExpand) {
                     if (secTitle.includes('추진 배경') || secTitle.includes('방향') || secTitle.includes('방침')) {
                         prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 리스트는 그대로 유지하고 항목의 개수를 늘리지 말아줘. 대신 각 불릿의 표현을 더욱 구체적으로 작성해줘. 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하며 문장이 아닌 명사형 표현으로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
-                    } else if (secTitle.includes('목적') || secTitle.includes('기대효과')) {
+                    } else if (secTitle.includes('추진 목적') || secTitle.includes('기대효과')) {
                         const bulletCount = (secMarkdown.match(/^- /gm) || []).length;
                         const targetCount = Math.ceil(bulletCount * 1.5);
                         prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 항목들을 유지하면서 새로운 불릿을 추가해 전체 항목 수가 약 ${targetCount}개가 되도록 해줘. 각 항목은 문장이 아닌 명사형 표현으로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
@@ -2307,7 +2261,7 @@ async function saveCurrentPlan() {
                         const lines = markdown.split('\n');
                         if (lines[0].startsWith('##')) lines.shift();
                         let newContent = lines.join('\n').trim();
-                        if (!secTitle.includes('추진 배경') && !secTitle.includes('목적') && !secTitle.includes('기대효과') && !secTitle.includes('방향') && !secTitle.includes('방침')) {
+                        if (!secTitle.includes('추진 배경') && !secTitle.includes('추진 목적') && !secTitle.includes('기대효과') && !secTitle.includes('방향') && !secTitle.includes('방침')) {
                             newContent = newContent.replace(/합니다\./gm, '한다.').replace(/합니다$/gm, '한다');
                         }
                         sectionDiv.dataset.markdownContent = newContent;
