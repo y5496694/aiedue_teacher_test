@@ -1875,7 +1875,7 @@
                             }
                             break;
                         case 'tablePlan':
-                            prompt += `${idx + 1}.  **${sec.title}**: 추진 과제를 번호 매긴 뒤 각 과제 아래에 '□ 추진업무', '○ 추진 방법', '○ 기관', '○ 기간(일정)', '○ 장소', '○ 수량/예산' 항목을 불릿으로 작성하고, 이어서 '추진 과제', '추진업무', '진 방법', '기관', '기간', '장소', '수량/예산' 열을 포함한 Markdown 테이블을 추가하세요. 추진업무와 추진 방법에는 구체적인 프로그램명을 명시하세요.\\n`;
+                            prompt += `${idx + 1}.  **${sec.title}**: 추진 과제를 번호 매긴 뒤 각 과제 아래에 '□ 추진업무', '○ 추진 방법', '○ 기관', '○ 기간(일정)', '○ 장소', '○ 수량/예산' 항목을 불릿으로 작성하고, 이어서 '추진 과제', '추진업무', '추진 방법', '기관', '기간', '장소', '수량/예산' 열을 포함한 Markdown 테이블을 추가하세요.\\n`;
                             break;
                         case 'tableBudget':
                             prompt += `${idx + 1}.  **${sec.title}**: 예산 편성 방향을 짧게 서술하고, 이어서 '순', '사업명', '항목', '산출내역(원)', '예산액(천원)', '비고'를 포함한 Markdown 테이블을 제공하세요. '산출내역(원)'은 '200,000원 × 1대 × 1회'와 같이 곱셈 식으로 작성하세요.\\n`;
@@ -2013,26 +2013,31 @@
             if (planModifySection) planModifySection.classList.remove('hidden');
         }
 
+        function ensureBulletNewlines(text) {
+            return text.replace(/([^\n])○/g, '$1\n○');
+        }
+
         function parseMarkdown(markdown) {
-            const plainMarkdown = markdown.replace(/\*\*(.*?)\*\*/g, '$1');
+            const plainMarkdown = ensureBulletNewlines(markdown.replace(/\*\*(.*?)\*\*/g, '$1'));
             return marked.parse(plainMarkdown);
         }
 
         function markdownToHtml(markdown) {
-            const plainMarkdown = markdown.replace(/\*\*(.*?)\*\*/g, '$1');
+            const plainMarkdown = ensureBulletNewlines(markdown.replace(/\*\*(.*?)\*\*/g, '$1'));
             return marked.parse(plainMarkdown);
         }
 
         function renderMarkdownTable(markdown) {
-            return marked.parse(markdown);
+            return marked.parse(ensureBulletNewlines(markdown));
         }
 
         function markdownTableToHtmlClipboard(markdown) {
-            const rows = markdown
+            const text = ensureBulletNewlines(markdown);
+            const rows = text
                 .trim()
                 .split('\n')
                 .map(row => row.split('|').slice(1, -1).map(cell => cell.trim()));
-             if (rows.length < 2) return markdown;
+             if (rows.length < 2) return text;
 
             const header = rows[0];
             const body = rows.slice(2);
