@@ -54,7 +54,7 @@
         .plan-section-content td { border: 1px solid #cbd5e1; padding: 0.75rem; text-align: left; }
         .plan-section-content td { white-space: pre-line; }
         .plan-section-content th { background-color: #f1f5f9; font-weight: 600; }
-        .edit-btn, .copy-section-btn, .expand-btn, .detail-btn {
+        .edit-btn, .copy-section-btn, .expand-btn, .detail-btn, .generate-detail-btn {
             background-color: #e2e8f0;
             color: #475569;
             border: none;
@@ -65,7 +65,7 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        .edit-btn:hover, .copy-section-btn:hover, .expand-btn:hover, .detail-btn:hover { background-color: #cbd5e1; }
+        .edit-btn:hover, .copy-section-btn:hover, .expand-btn:hover, .detail-btn:hover, .generate-detail-btn:hover { background-color: #cbd5e1; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #7A9D54; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .nav-link { padding: 0.5rem 1rem; border-radius: 0.375rem; transition: background-color 0.2s, color 0.2s; }
@@ -1838,12 +1838,6 @@
                 if (focusInstruction) {
                     prompt += `- 분류: ${category}. ${focusInstruction}\n\n`;
                 }
-                if (detailPlanExamples) {
-                    prompt += `세부 추진 계획 내용은 다음 예시를 참고해 작성해 주세요.\\n세부 예시:\\n${detailPlanExamples}\\n\\n`;
-                }
-                if (planExamples) {
-                    prompt += `세부 추진 계획의 부호와 구조는 다음 예시를 참고해 주세요.\\n부호 및 구조 예시:\\n${planExamples}\\n\\n`;
-                }
                 if (exampleFiles.length) {
                     prompt += `다음 예시 자료의 문법과 내용을 참고하여 작성해 주세요.\\n`;
                     exampleFiles.forEach((file, idx) => {
@@ -1875,7 +1869,11 @@
                             }
                             break;
                         case 'tablePlan':
-                            prompt += `${idx + 1}.  **${sec.title}**: 추진 과제를 번호 매긴 뒤 각 과제 아래에 '□ 추진업무', '○ 추진 방법', '○ 기관', '○ 기간(일정)', '○ 장소', '○ 수량/예산' 항목을 불릿으로 작성하고, 이어서 '추진 과제', '추진업무', '추진 방법', '기관', '기간', '장소', '수량/예산' 열을 포함한 Markdown 테이블을 추가하세요.\\n`;
+                            if (sec.title.includes('세부 추진 계획')) {
+                                prompt += `${idx + 1}.  **${sec.title}**: 이 항목의 내용은 작성하지 말고 섹션 제목만 출력하세요.\\n`;
+                            } else {
+                                prompt += `${idx + 1}.  **${sec.title}**: 추진 과제를 번호 매긴 뒤 각 과제 아래에 '□ 추진업무', '○ 추진 방법', '○ 기관', '○ 기간(일정)', '○ 장소', '○ 수량/예산' 항목을 불릿으로 작성하고, 이어서 '추진 과제', '추진업무', '추진 방법', '기관', '기간', '장소', '수량/예산' 열을 포함한 Markdown 테이블을 추가하세요.\\n`;
+                            }
                             break;
                         case 'tableBudget':
                             prompt += `${idx + 1}.  **${sec.title}**: 예산 편성 방향을 짧게 서술하고, 이어서 '순', '사업명', '항목', '산출내역(원)', '예산액(천원)', '비고'를 포함한 Markdown 테이블을 제공하세요. '산출내역(원)'은 '200,000원 × 1대 × 1회'와 같이 곱셈 식으로 작성하세요.\\n`;
@@ -1959,40 +1957,50 @@
 
                 const sectionDiv = document.createElement('div');
                 sectionDiv.className = 'plan-section';
-                sectionDiv.dataset.markdownContent = sectionContentMarkdown;
-                
+
                 const titleEl = document.createElement('h3');
                 titleEl.textContent = sectionTitle;
-                
+
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'plan-section-content';
-                contentDiv.innerHTML = parseMarkdown(sectionContentMarkdown);
-                
-                const controlsDiv = document.createElement('div');
-                controlsDiv.className = 'absolute top-4 right-4 flex gap-2';
 
-                const expandBtn = document.createElement('button');
-                expandBtn.className = 'expand-btn';
-                expandBtn.textContent = '내용 늘리기';
+                if (sectionTitle.includes('세부 추진 계획')) {
+                    sectionDiv.dataset.markdownContent = '';
+                    const generateBtn = document.createElement('button');
+                    generateBtn.className = 'generate-detail-btn';
+                    generateBtn.textContent = '생성';
+                    contentDiv.appendChild(generateBtn);
+                } else {
+                    sectionDiv.dataset.markdownContent = sectionContentMarkdown;
+                    contentDiv.innerHTML = parseMarkdown(sectionContentMarkdown);
 
-                const detailBtn = document.createElement('button');
-                detailBtn.className = 'detail-btn';
-                detailBtn.textContent = '자세하게';
+                    const controlsDiv = document.createElement('div');
+                    controlsDiv.className = 'absolute top-4 right-4 flex gap-2';
 
-                const editBtn = document.createElement('button');
-                editBtn.className = 'edit-btn';
-                editBtn.textContent = '편집';
+                    const expandBtn = document.createElement('button');
+                    expandBtn.className = 'expand-btn';
+                    expandBtn.textContent = '내용 늘리기';
 
-                const copyBtn = document.createElement('button');
-                copyBtn.className = 'copy-section-btn';
-                copyBtn.textContent = '복사';
+                    const detailBtn = document.createElement('button');
+                    detailBtn.className = 'detail-btn';
+                    detailBtn.textContent = '자세하게';
 
-                controlsDiv.appendChild(expandBtn);
-                controlsDiv.appendChild(detailBtn);
-                controlsDiv.appendChild(editBtn);
-                controlsDiv.appendChild(copyBtn);
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'edit-btn';
+                    editBtn.textContent = '편집';
 
-                sectionDiv.appendChild(controlsDiv);
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = 'copy-section-btn';
+                    copyBtn.textContent = '복사';
+
+                    controlsDiv.appendChild(expandBtn);
+                    controlsDiv.appendChild(detailBtn);
+                    controlsDiv.appendChild(editBtn);
+                    controlsDiv.appendChild(copyBtn);
+
+                    sectionDiv.appendChild(controlsDiv);
+                }
+
                 sectionDiv.appendChild(titleEl);
                 sectionDiv.appendChild(contentDiv);
                 planContainer.appendChild(sectionDiv);
@@ -2204,7 +2212,81 @@ async function saveCurrentPlan() {
             const sectionDiv = button.closest('.plan-section');
             const contentDiv = sectionDiv.querySelector('.plan-section-content');
 
-            if (button.classList.contains('copy-section-btn')) {
+            if (button.classList.contains('generate-detail-btn')) {
+                const sections = planContainer.querySelectorAll('.plan-section');
+                let otherSections = '';
+                sections.forEach(sec => {
+                    const title = sec.querySelector('h3').textContent;
+                    if (!title.includes('세부 추진 계획')) {
+                        const content = sec.dataset.markdownContent || '';
+                        otherSections += `## ${title}\n${content}\n\n`;
+                    }
+                });
+                let prompt = `다음 주제와 다른 항목 내용을 참고하여 세부 추진 계획을 작성해줘.\n주제: ${planTitle.textContent}\n\n`;
+                if (otherSections) {
+                    prompt += `다른 항목 내용:\n${otherSections}`;
+                }
+                if (detailPlanExamples) {
+                    prompt += `세부 추진 계획 예시:\n${detailPlanExamples}\n\n`;
+                }
+                if (planExamples) {
+                    prompt += `부호 및 구조 예시:\n${planExamples}\n\n`;
+                }
+                if (exampleFiles.length) {
+                    prompt += `예시 자료:\n`;
+                    exampleFiles.forEach((file, idx) => {
+                        prompt += `예시 ${idx + 1} (${file.name}):\n${file.text}\n\n`;
+                    });
+                }
+                prompt += `'세부 추진 계획'을 Markdown 표 형식으로 출력해줘.`;
+                try {
+                    showToast('세부 추진 계획 생성 중입니다..');
+                    const response = await fetch('/.netlify/functions/generatePlan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt })
+                    });
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        const markdown = extractMarkdownFromText(text);
+                        const lines = markdown.split('\n');
+                        if (lines[0].startsWith('##')) lines.shift();
+                        let newContent = lines.join('\n').trim();
+                        newContent = newContent.replace(/합니다\./gm, '한다.').replace(/합니다$/gm, '한다');
+                        sectionDiv.dataset.markdownContent = newContent;
+                        contentDiv.innerHTML = parseMarkdown(newContent);
+
+                        const controlsDiv = document.createElement('div');
+                        controlsDiv.className = 'absolute top-4 right-4 flex gap-2';
+
+                        const expandBtn = document.createElement('button');
+                        expandBtn.className = 'expand-btn';
+                        expandBtn.textContent = '내용 늘리기';
+
+                        const detailBtn = document.createElement('button');
+                        detailBtn.className = 'detail-btn';
+                        detailBtn.textContent = '자세하게';
+
+                        const editBtn = document.createElement('button');
+                        editBtn.className = 'edit-btn';
+                        editBtn.textContent = '편집';
+
+                        const copyBtn = document.createElement('button');
+                        copyBtn.className = 'copy-section-btn';
+                        copyBtn.textContent = '복사';
+
+                        controlsDiv.appendChild(expandBtn);
+                        controlsDiv.appendChild(detailBtn);
+                        controlsDiv.appendChild(editBtn);
+                        controlsDiv.appendChild(copyBtn);
+                        sectionDiv.insertBefore(controlsDiv, sectionDiv.firstChild);
+                        saveCurrentPlan();
+                    }
+                } catch (err) {
+                    console.error('Detail Plan Generate Error:', err);
+                }
+            } else if (button.classList.contains('copy-section-btn')) {
                 const markdownContent = sectionDiv.dataset.markdownContent;
                 if (markdownContent.includes('|')) {
                     const htmlToCopy = markdownTableToHtmlClipboard(markdownContent);
