@@ -2239,7 +2239,34 @@ async function saveCurrentPlan() {
                 const secTitle = sectionDiv.querySelector('h3').textContent;
                 const secMarkdown = sectionDiv.dataset.markdownContent;
                 let prompt;
-                if (isExpand) {
+                if (button.classList.contains('detail-btn') && secTitle.includes('세부 추진 계획')) {
+                    let otherSections = '';
+                    const sections = planContainer.querySelectorAll('.plan-section');
+                    sections.forEach(sec => {
+                        const title = sec.querySelector('h3').textContent;
+                        if (title !== secTitle) {
+                            const content = sec.dataset.markdownContent || '';
+                            otherSections += `## ${title}\n${content}\n\n`;
+                        }
+                    });
+                    prompt = `다음 주제와 다른 항목 내용을 참고하여 세부 추진 계획을 작성해줘.\n주제: ${planTitle.textContent}\n\n`;
+                    if (otherSections) {
+                        prompt += `다른 항목 내용:\n${otherSections}`;
+                    }
+                    if (detailPlanExamples) {
+                        prompt += `세부 추진 계획 예시:\n${detailPlanExamples}\n\n`;
+                    }
+                    if (planExamples) {
+                        prompt += `부호 및 구조 예시:\n${planExamples}\n\n`;
+                    }
+                    if (exampleFiles.length) {
+                        prompt += `예시 자료:\n`;
+                        exampleFiles.forEach((file, idx) => {
+                            prompt += `예시 ${idx + 1} (${file.name}):\n${file.text}\n\n`;
+                        });
+                    }
+                    prompt += `'세부 추진 계획'을 Markdown 표 형식으로 출력해줘.`;
+                } else if (isExpand) {
                     if (secTitle.includes('추진 배경') || secTitle.includes('방향') || secTitle.includes('방침')) {
                         prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 리스트는 그대로 유지하고 항목의 개수를 늘리지 말아줘. 대신 각 불릿의 표현을 더욱 구체적으로 작성해줘. 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하며 문장이 아닌 명사형 표현으로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
                     } else if (secTitle.includes('추진 목적') || secTitle.includes('기대효과')) {
