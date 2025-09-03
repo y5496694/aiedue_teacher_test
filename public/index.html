@@ -582,6 +582,13 @@
         });
 
         // Load plan examples to guide dynamic '세부 추진 계획' generation
+        // First, load detailed plan examples as the primary reference
+        let detailPlanExamples = '';
+        fetch('/detail_plan_examples.txt')
+            .then(response => response.text())
+            .then(text => { detailPlanExamples = text; });
+
+        // Load additional general plan examples
         let planExamples = '';
         fetch('/plan_examples.txt')
             .then(response => response.text())
@@ -1831,8 +1838,11 @@
                 if (focusInstruction) {
                     prompt += `- 분류: ${category}. ${focusInstruction}\n\n`;
                 }
+                if (detailPlanExamples) {
+                    prompt += `세부 추진 계획 작성 시 아래 세부 예시를 최우선으로 참고해 주세요.\\n세부 예시:\\n${detailPlanExamples}\\n\\n`;
+                }
                 if (planExamples) {
-                    prompt += `세부 추진 계획 작성 시 아래 예시를 참고하여 주제에 따라 유동적으로 구성해 주세요.\\n예시:\\n${planExamples}\\n\\n`;
+                    prompt += `추가 예시:\\n${planExamples}\\n\\n`;
                 }
                 if (exampleFiles.length) {
                     prompt += `다음 예시 자료의 문법과 내용을 참고하여 작성해 주세요.\\n`;
