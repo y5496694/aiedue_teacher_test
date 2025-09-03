@@ -1912,12 +1912,12 @@
                 };
 
                 const parsed1 = parseSections(rawText1);
+                const prevSection = parsed1.sections[detailIdx - 1];
+                const nextSection = parsed1.sections[detailIdx];
 
                 let prompt2 = `주제: ${planType}\\n\\n`;
-                prompt2 += `세부 추진 계획을 제외한 다른 모든 항목의 내용은 다음과 같습니다:\\n`;
-                parsed1.sections.forEach(sec => {
-                    prompt2 += `## ${sec.title}\\n${sec.content}\\n\\n`;
-                });
+                prompt2 += `이전 항목(${prevSection.title}) 내용:\\n${prevSection.content}\\n\\n`;
+                prompt2 += `다음 항목(${nextSection.title}) 내용:\\n${nextSection.content}\\n\\n`;
                 if (detailPlanExamples) {
                     prompt2 += `세부 예시:\\n${detailPlanExamples}\\n\\n`;
                 }
@@ -1945,8 +1945,9 @@
                 }
 
                 const finalSections = [
-                    ...parsed1.sections,
-                    { title: '세부 추진 계획', content: detailContent }
+                    ...parsed1.sections.slice(0, detailIdx),
+                    { title: '세부 추진 계획', content: detailContent },
+                    ...parsed1.sections.slice(detailIdx)
                 ];
 
                 let finalRawText = `TITLE: ${parsed1.title}\\n\\n`;
