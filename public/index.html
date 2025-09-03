@@ -1989,7 +1989,7 @@
             
             planContainer.innerHTML = '';
 
-            const sections = content.split(/^##\s/m).filter(s => s.trim() !== '');
+            const sections = content.split(/^##\s*/m).filter(s => s.trim() !== '');
             const sectionTitles = [];
 
             sections.forEach(sectionText => {
