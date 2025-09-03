@@ -1839,10 +1839,10 @@
                     prompt += `- 분류: ${category}. ${focusInstruction}\n\n`;
                 }
                 if (detailPlanExamples) {
-                    prompt += `세부 추진 계획 작성 시 아래 세부 예시를 최우선으로 참고해 주세요.\\n세부 예시:\\n${detailPlanExamples}\\n\\n`;
+                    prompt += `세부 추진 계획 내용은 다음 예시를 참고해 작성해 주세요.\\n세부 예시:\\n${detailPlanExamples}\\n\\n`;
                 }
                 if (planExamples) {
-                    prompt += `추가 예시:\\n${planExamples}\\n\\n`;
+                    prompt += `세부 추진 계획의 부호와 구조는 다음 예시를 참고해 주세요.\\n부호 및 구조 예시:\\n${planExamples}\\n\\n`;
                 }
                 if (exampleFiles.length) {
                     prompt += `다음 예시 자료의 문법과 내용을 참고하여 작성해 주세요.\\n`;
