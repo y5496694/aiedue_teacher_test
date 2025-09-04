@@ -54,7 +54,7 @@
         .plan-section-content td { border: 1px solid #cbd5e1; padding: 0.75rem; text-align: left; }
         .plan-section-content td { white-space: pre-line; }
         .plan-section-content th { background-color: #f1f5f9; font-weight: 600; }
-        .edit-btn, .copy-section-btn, .expand-btn, .detail-btn, .generate-detail-btn, .regenerate-detail-btn {
+        .edit-btn, .copy-section-btn, .expand-btn, .detail-btn, .generate-detail-btn, .regenerate-detail-btn, .regenerate-section-btn {
             background-color: #e2e8f0;
             color: #475569;
             border: none;
@@ -65,7 +65,7 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        .edit-btn:hover, .copy-section-btn:hover, .expand-btn:hover, .detail-btn:hover, .generate-detail-btn:hover, .regenerate-detail-btn:hover { background-color: #cbd5e1; }
+        .edit-btn:hover, .copy-section-btn:hover, .expand-btn:hover, .detail-btn:hover, .generate-detail-btn:hover, .regenerate-detail-btn:hover, .regenerate-section-btn:hover { background-color: #cbd5e1; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #7A9D54; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .nav-link { padding: 0.5rem 1rem; border-radius: 0.375rem; transition: background-color 0.2s, color 0.2s; }
@@ -1977,6 +1977,13 @@
                     const controlsDiv = document.createElement('div');
                     controlsDiv.className = 'absolute top-4 right-4 flex gap-2';
 
+                    if (sectionTitle.includes('추진 목적') || sectionTitle.includes('기대효과')) {
+                        const regenBtn = document.createElement('button');
+                        regenBtn.className = 'regenerate-section-btn';
+                        regenBtn.textContent = '재생성';
+                        controlsDiv.appendChild(regenBtn);
+                    }
+
                     const expandBtn = document.createElement('button');
                     expandBtn.className = 'expand-btn';
                     expandBtn.textContent = '내용 늘리기';
@@ -2063,6 +2070,24 @@
             });
             tableHtml += '</tbody></table>';
             return tableHtml;
+        }
+
+        function removeBudgetInfo(markdown) {
+            const rows = markdown.split('\n');
+            if (rows[0] && rows[0].includes('|')) {
+                const headers = rows[0].split('|').map(h => h.trim());
+                const budgetIdx = headers.findIndex(h => h.includes('예산'));
+                if (budgetIdx > -1) {
+                    return rows.map(row => {
+                        const cells = row.split('|');
+                        const startOffset = cells[0].trim() === '' ? 1 : 0;
+                        const idx = budgetIdx + startOffset;
+                        if (cells[idx] !== undefined) cells.splice(idx, 1);
+                        return cells.join('|');
+                    }).filter(line => line.replace(/\|/g, '').trim() !== '').join('\n');
+                }
+            }
+            return rows.filter(line => !line.includes('예산')).join('\n');
         }
 
         function extractMarkdownFromText(text) {
@@ -2238,7 +2263,7 @@ async function saveCurrentPlan() {
                         prompt += `예시 ${idx + 1} (${file.name}):\n${file.text}\n\n`;
                     });
                 }
-                prompt += `'세부 추진 계획'을 Markdown 표 형식으로 출력해줘. 표에는 '목표', '추진방향', '추진 일정', '예산 관련', '기대효과' 항목은 포함하지 마.`;
+                prompt += `'세부 추진 계획'을 Markdown 표 형식으로 출력해줘. 표에는 '목표', '추진방향', '추진 일정', '예산 관련', '예산 운영 계획', '기대효과' 항목은 포함하지 마.`;
                 try {
                     showToast('세부 추진 계획 생성 중입니다..');
                     const response = await fetch('/.netlify/functions/generatePlan', {
@@ -2254,6 +2279,7 @@ async function saveCurrentPlan() {
                         if (lines[0].startsWith('##')) lines.shift();
                         let newContent = lines.join('\n').trim();
                         newContent = newContent.replace(/합니다\./gm, '한다.').replace(/합니다$/gm, '한다');
+                        newContent = removeBudgetInfo(newContent);
                         sectionDiv.dataset.markdownContent = newContent;
                         contentDiv.innerHTML = parseMarkdown(newContent);
 
@@ -2289,10 +2315,53 @@ async function saveCurrentPlan() {
                         controlsDiv.appendChild(editBtn);
                         controlsDiv.appendChild(copyBtn);
                         sectionDiv.insertBefore(controlsDiv, sectionDiv.firstChild);
-                        saveCurrentPlan();
+                        await saveCurrentPlan();
                     }
                 } catch (err) {
                     console.error('Detail Plan Generate Error:', err);
+                }
+            } else if (button.classList.contains('regenerate-section-btn')) {
+                const secTitle = sectionDiv.querySelector('h3').textContent;
+                const sections = planContainer.querySelectorAll('.plan-section');
+                let otherSections = '';
+                sections.forEach(sec => {
+                    const title = sec.querySelector('h3').textContent;
+                    if (title !== secTitle) {
+                        const content = sec.dataset.markdownContent || '';
+                        otherSections += `## ${title}\n${content}\n\n`;
+                    }
+                });
+                let prompt = `다음 계획서의 다른 항목을 참고하여 ${secTitle}을 작성해줘.\n주제: ${planTitle.textContent}\n\n`;
+                if (otherSections) {
+                    prompt += `다른 항목 내용:\n${otherSections}`;
+                }
+                if (secTitle.includes('기대효과')) {
+                    const purposeSection = Array.from(sections).find(sec => sec.querySelector('h3').textContent.includes('추진 목적'));
+                    if (purposeSection) {
+                        const purposeContent = purposeSection.dataset.markdownContent || '';
+                        prompt += `추진 목적:\n${purposeContent}\n\n위 추진 목적과 맥락이 맞도록 작성해줘.`;
+                    }
+                }
+                try {
+                    showToast('재생성 중입니다..');
+                    const response = await fetch('/.netlify/functions/generatePlan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt })
+                    });
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        const markdown = extractMarkdownFromText(text);
+                        const lines = markdown.split('\n');
+                        if (lines[0].startsWith('##')) lines.shift();
+                        let newContent = lines.join('\n').trim();
+                        sectionDiv.dataset.markdownContent = newContent;
+                        contentDiv.innerHTML = parseMarkdown(newContent);
+                        await saveCurrentPlan();
+                    }
+                } catch (err) {
+                    console.error('Section Regenerate Error:', err);
                 }
             } else if (button.classList.contains('copy-section-btn')) {
                 const markdownContent = sectionDiv.dataset.markdownContent;
@@ -2355,7 +2424,7 @@ async function saveCurrentPlan() {
                             prompt += `예시 ${idx + 1} (${file.name}):\n${file.text}\n\n`;
                         });
                     }
-                    prompt += `'세부 추진 계획'을 Markdown 표 형식으로 출력해줘. 표에는 '목표', '추진방향', '추진 일정', '예산 관련', '기대효과' 항목은 포함하지 마.`;
+                    prompt += `'세부 추진 계획'을 Markdown 표 형식으로 출력해줘. 표에는 '목표', '추진방향', '추진 일정', '예산 관련', '예산 운영 계획', '기대효과' 항목은 포함하지 마.`;
                 } else if (isExpand) {
                     if (secTitle.includes('추진 배경') || secTitle.includes('방향') || secTitle.includes('방침')) {
                         prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 리스트는 그대로 유지하고 항목의 개수를 늘리지 말아줘. 대신 각 불릿의 표현을 더욱 구체적으로 작성해줘. 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하며 문장이 아닌 명사형 표현으로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
@@ -2386,9 +2455,10 @@ async function saveCurrentPlan() {
                         if (!secTitle.includes('추진 배경') && !secTitle.includes('추진 목적') && !secTitle.includes('기대효과') && !secTitle.includes('방향') && !secTitle.includes('방침')) {
                             newContent = newContent.replace(/합니다\./gm, '한다.').replace(/합니다$/gm, '한다');
                         }
+                        newContent = removeBudgetInfo(newContent);
                         sectionDiv.dataset.markdownContent = newContent;
                         contentDiv.innerHTML = parseMarkdown(newContent);
-                        saveCurrentPlan();
+                        await saveCurrentPlan();
                     }
                 } catch (err) {
                     console.error('Section Update Error:', err);
