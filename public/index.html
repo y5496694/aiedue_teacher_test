@@ -54,7 +54,7 @@
         .plan-section-content td { border: 1px solid #cbd5e1; padding: 0.75rem; text-align: left; }
         .plan-section-content td { white-space: pre-line; }
         .plan-section-content th { background-color: #f1f5f9; font-weight: 600; }
-        .edit-btn, .copy-section-btn, .expand-btn, .detail-btn, .generate-detail-btn {
+        .edit-btn, .copy-section-btn, .expand-btn, .detail-btn, .generate-detail-btn, .regenerate-detail-btn {
             background-color: #e2e8f0;
             color: #475569;
             border: none;
@@ -65,7 +65,7 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        .edit-btn:hover, .copy-section-btn:hover, .expand-btn:hover, .detail-btn:hover, .generate-detail-btn:hover { background-color: #cbd5e1; }
+        .edit-btn:hover, .copy-section-btn:hover, .expand-btn:hover, .detail-btn:hover, .generate-detail-btn:hover, .regenerate-detail-btn:hover { background-color: #cbd5e1; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #7A9D54; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .nav-link { padding: 0.5rem 1rem; border-radius: 0.375rem; transition: background-color 0.2s, color 0.2s; }
@@ -258,7 +258,7 @@
                                         <input type="text" id="plan-title-input" class="hidden text-2xl font-bold text-slate-800 border-b-2 border-blue-500 focus:outline-none">
                                     </div>
                                     <div class="flex gap-2">
-                                        <button id="merge-plan-btn" class="copy-section-btn">한장으로 합치기</button>
+                                        <button id="merge-plan-btn" class="copy-section-btn">요약본</button>
                                         <button id="edit-title-btn" class="edit-btn">편집</button>
                                     </div>
                                 </div>
@@ -633,7 +633,7 @@
         const categoryExamples = {
             "정책 기획": "예시 주제: 기본계획, 추진계획(활성화 계획, 지원계획)",
             "행사 기획": "예시 주제: 워크숍 계획, 축제 계획, 협의회 계획",
-            "장학 기획": "예시 주제: 컨설팅 계획, 교육 계획, 제작 및 보급 계획"
+            "장학 기획": "예시 주제: 컨설팅 계획, 정책 기획, 제작 및 보급 계획"
         };
 
         const categoryFocus = {
@@ -2212,7 +2212,7 @@ async function saveCurrentPlan() {
             const sectionDiv = button.closest('.plan-section');
             const contentDiv = sectionDiv.querySelector('.plan-section-content');
 
-            if (button.classList.contains('generate-detail-btn')) {
+            if (button.classList.contains('generate-detail-btn') || button.classList.contains('regenerate-detail-btn')) {
                 const sections = planContainer.querySelectorAll('.plan-section');
                 let otherSections = '';
                 sections.forEach(sec => {
@@ -2238,7 +2238,7 @@ async function saveCurrentPlan() {
                         prompt += `예시 ${idx + 1} (${file.name}):\n${file.text}\n\n`;
                     });
                 }
-                prompt += `'세부 추진 계획'을 Markdown 표 형식으로 출력해줘.`;
+                prompt += `'세부 추진 계획'을 Markdown 표 형식으로 출력해줘. 표에는 '목표', '추진방향', '추진 일정', '예산 관련', '기대효과' 항목은 포함하지 마.`;
                 try {
                     showToast('세부 추진 계획 생성 중입니다..');
                     const response = await fetch('/.netlify/functions/generatePlan', {
@@ -2257,8 +2257,15 @@ async function saveCurrentPlan() {
                         sectionDiv.dataset.markdownContent = newContent;
                         contentDiv.innerHTML = parseMarkdown(newContent);
 
+                        const oldControls = sectionDiv.querySelector('.absolute.top-4.right-4');
+                        if (oldControls) oldControls.remove();
+
                         const controlsDiv = document.createElement('div');
                         controlsDiv.className = 'absolute top-4 right-4 flex gap-2';
+
+                        const regenBtn = document.createElement('button');
+                        regenBtn.className = 'regenerate-detail-btn';
+                        regenBtn.textContent = '재생성';
 
                         const expandBtn = document.createElement('button');
                         expandBtn.className = 'expand-btn';
@@ -2276,6 +2283,7 @@ async function saveCurrentPlan() {
                         copyBtn.className = 'copy-section-btn';
                         copyBtn.textContent = '복사';
 
+                        controlsDiv.appendChild(regenBtn);
                         controlsDiv.appendChild(expandBtn);
                         controlsDiv.appendChild(detailBtn);
                         controlsDiv.appendChild(editBtn);
@@ -2347,7 +2355,7 @@ async function saveCurrentPlan() {
                             prompt += `예시 ${idx + 1} (${file.name}):\n${file.text}\n\n`;
                         });
                     }
-                    prompt += `'세부 추진 계획'을 Markdown 표 형식으로 출력해줘.`;
+                    prompt += `'세부 추진 계획'을 Markdown 표 형식으로 출력해줘. 표에는 '목표', '추진방향', '추진 일정', '예산 관련', '기대효과' 항목은 포함하지 마.`;
                 } else if (isExpand) {
                     if (secTitle.includes('추진 배경') || secTitle.includes('방향') || secTitle.includes('방침')) {
                         prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 리스트는 그대로 유지하고 항목의 개수를 늘리지 말아줘. 대신 각 불릿의 표현을 더욱 구체적으로 작성해줘. 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하며 문장이 아닌 명사형 표현으로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
@@ -2391,16 +2399,17 @@ async function saveCurrentPlan() {
         if (mergePlanBtn) {
             mergePlanBtn.addEventListener('click', () => {
                 const sections = planContainer.querySelectorAll('.plan-section');
-                let text = `# ${planTitle.textContent}\n\n`;
+                let markdown = `# ${planTitle.textContent}\n\n`;
                 sections.forEach(sec => {
                     const title = sec.querySelector('h3').textContent;
                     const content = sec.dataset.markdownContent || sec.querySelector('.plan-section-content').innerText.trim();
-                    text += `## ${title}\n${content}\n\n`;
+                    markdown += `## ${title}\n${content}\n\n`;
                 });
                 const popup = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
                 if (popup) {
-                    const escapedText = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-                    popup.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${planTitle.textContent}</title></head><body><button id="copyTextBtn">내용 복사</button><pre id="content" style="white-space: pre-wrap;">${escapedText}</pre><script>document.getElementById('copyTextBtn').addEventListener('click',function(){navigator.clipboard.writeText(document.getElementById('content').innerText).then(()=>alert('내용이 복사되었습니다.'));});<\/script></body></html>`);
+                    const html = parseMarkdown(markdown);
+                    const markdownForScript = JSON.stringify(markdown);
+                    popup.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${planTitle.textContent}</title><style>body{font-family:'Noto Sans KR',sans-serif;padding:1rem;} table{width:100%;border-collapse:collapse;} th,td{border:1px solid #cbd5e1;padding:0.75rem;text-align:left;} th{background-color:#f1f5f9;font-weight:600;}</style></head><body><button id="copyTextBtn">복사</button><div id="content">${html}</div><script>const markdown=${markdownForScript};document.getElementById('copyTextBtn').addEventListener('click',function(){navigator.clipboard.writeText(markdown).then(()=>alert('내용이 복사되었습니다.'));});<\/script></body></html>`);
                     popup.document.close();
                 }
             });
