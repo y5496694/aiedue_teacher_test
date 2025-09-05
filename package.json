@@ -1,7 +1,7 @@
 {
-  "name": "aiedu-teacher-functions",
+  "name": "aiedu-plan-functions",
   "version": "1.0.0",
-  "description": "Serverless functions for Aiedu Teacher",
+  "description": "Serverless functions for Aiedu Plan",
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
