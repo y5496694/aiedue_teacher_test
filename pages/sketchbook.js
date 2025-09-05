@@ -1,21 +1,34 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Head from 'next/head';
 
+// Excalidraw is loaded only on the client to avoid SSR issues.
 const Excalidraw = dynamic(
   async () => (await import('@excalidraw/excalidraw')).Excalidraw,
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => <div>Loading sketchbook...</div>,
+  }
 );
 
 export default function Sketchbook() {
   const apiRef = useRef(null);
+  const [initialData, setInitialData] = useState(null);
 
-  const initialData = useMemo(() => {
-    if (typeof window === 'undefined') return undefined;
+  // Load saved scene from localStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
     const saved = localStorage.getItem('my-excalidraw-scene');
-    return saved ? JSON.parse(saved) : undefined;
+    if (saved) {
+      try {
+        setInitialData(JSON.parse(saved));
+      } catch {
+        // ignore corrupted data
+      }
+    }
   }, []);
 
+  // Persist scene to localStorage whenever it changes
   const onChange = useCallback((elements, appState, files) => {
     if (typeof window === 'undefined') return;
     localStorage.setItem(
@@ -24,6 +37,7 @@ export default function Sketchbook() {
     );
   }, []);
 
+  // Export the current scene as a PNG file
   const exportPNG = useCallback(async () => {
     if (!apiRef.current) return;
     const { exportToBlob } = await import('@excalidraw/excalidraw');
@@ -56,8 +70,12 @@ export default function Sketchbook() {
                 const file = e.target.files?.[0];
                 if (!file || !apiRef.current) return;
                 const text = await file.text();
-                const data = JSON.parse(text);
-                apiRef.current.updateScene(data);
+                try {
+                  const data = JSON.parse(text);
+                  apiRef.current.updateScene(data);
+                } catch {
+                  // ignore invalid file
+                }
               }}
             />
             JSON 불러오기
