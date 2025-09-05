@@ -11,7 +11,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/@excalidraw/excalidraw/dist/excalidraw.min.css">
     <style>
         html { scroll-behavior: smooth; }
         body { font-family: 'Noto Sans KR', sans-serif; }
@@ -133,7 +132,6 @@
                         <a href="#table" id="nav-table" class="nav-link">[한글] 표 만들기</a>
                         <a href="#official" id="nav-official" class="nav-link">기안문</a>
                         <a href="#letter" id="nav-letter" class="nav-link">가정통신문</a>
-                        <a href="#sketch" id="nav-sketch" class="nav-link">에이두 스케치북</a>
                         <button id="logout-btn" class="text-sm bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded-md transition-colors">로그아웃</button>
                     </nav>
                 </div>
@@ -432,11 +430,6 @@
                         </div>
                     </div>
                 </div>
-                <!-- Sketchbook View -->
-                <div id="sketch-view" class="hidden">
-                    <h2 class="text-3xl font-bold mb-6">에이두 스케치북</h2>
-                    <div id="excalidraw-wrapper" class="w-full h-[70vh] bg-white rounded-lg shadow"></div>
-                </div>
             </main>
         </div>
         <!-- Toast Message -->
@@ -483,14 +476,12 @@
         const navTable = document.getElementById('nav-table');
         const navOfficial = document.getElementById('nav-official');
         const navLetter = document.getElementById('nav-letter');
-        const navSketch = document.getElementById('nav-sketch');
         const homeLink = document.getElementById('home-link');
         const homeView = document.getElementById('home-view');
         const planView = document.getElementById('plan-view');
         const tableView = document.getElementById('table-view');
         const officialView = document.getElementById('official-view');
         const letterView = document.getElementById('letter-view');
-        const sketchView = document.getElementById('sketch-view');
         const recentPlansList = document.getElementById('recent-plans-list');
         const form = document.getElementById('plan-form');
         const generateBtn = document.getElementById('generate-btn');
@@ -715,35 +706,8 @@
         let isEditingOfficial = false;
         let currentOfficialId = null;
 
-        const views = { home: homeView, plan: planView, table: tableView, official: officialView, letter: letterView, sketch: sketchView };
-        const navLinks = { home: navHome, plan: navPlan, table: navTable, official: navOfficial, letter: navLetter, sketch: navSketch };
-        let sketchInitialized = false;
-
-        const initSketchbook = async () => {
-            const React = await import('https://esm.sh/react@18');
-            const ReactDOM = await import('https://esm.sh/react-dom@18');
-            const ExcalidrawModule = await import('https://esm.sh/@excalidraw/excalidraw@0.17.1?deps=react@18,react-dom@18');
-            const { useEffect, useState } = React;
-            const { Excalidraw } = ExcalidrawModule;
-
-            const Sketchbook = () => {
-                const [initialData, setInitialData] = useState(null);
-                useEffect(() => {
-                    const saved = localStorage.getItem('aiedu-sketchbook');
-                    if (saved) {
-                        try { setInitialData(JSON.parse(saved)); } catch {}
-                    }
-                }, []);
-                const handleChange = (elements, state) => {
-                    localStorage.setItem('aiedu-sketchbook', JSON.stringify({ elements, appState: state }));
-                };
-                return React.createElement('div', { style: { height: '70vh' } },
-                    React.createElement(Excalidraw, { initialData, onChange: handleChange })
-                );
-            };
-
-            ReactDOM.createRoot(document.getElementById('excalidraw-wrapper')).render(React.createElement(Sketchbook));
-        };
+        const views = { home: homeView, plan: planView, table: tableView, official: officialView, letter: letterView };
+        const navLinks = { home: navHome, plan: navPlan, table: navTable, official: navOfficial, letter: navLetter };
 
         let statsChartInstance = null;
 
@@ -828,10 +792,6 @@
             if (targetView === 'letter') {
                 loadAndDisplayItems('letters', letterSavedList, viewLetter);
             }
-            if (targetView === 'sketch' && !sketchInitialized) {
-                initSketchbook();
-                sketchInitialized = true;
-            }
         };
 
         navHome.addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
@@ -840,7 +800,6 @@
         navTable.addEventListener('click', (e) => { e.preventDefault(); switchView('table'); });
         navOfficial.addEventListener('click', (e) => { e.preventDefault(); switchView('official'); });
         navLetter.addEventListener('click', (e) => { e.preventDefault(); switchView('letter'); });
-        navSketch.addEventListener('click', (e) => { e.preventDefault(); switchView('sketch'); });
 
         // --- TABLE GENERATOR LOGIC ---
         if (tableForm) {
