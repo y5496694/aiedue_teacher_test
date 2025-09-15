@@ -614,6 +614,8 @@
             ]
         };
 
+        let currentOutline = [...planOutlineDefinitions["기본목차"]];
+
         const categoryExamples = {
             "정책": "기존 계획에 존재하던 것에 새로운 내용이나 메뉴얼, 정책이 추가되는 정책 방향/예산/인사 계획 주제라는 것에 주안점을 두어 작성하세요.",
             "교육": "교육과정 내용과 학생 지도에 주안점을 두어 작성하세요.",
@@ -631,8 +633,7 @@
         };
 
         function updateOutlineDescription() {
-            const name = outlineButtons.querySelector('.active').dataset.value;
-            const sections = planOutlineDefinitions[name].map(s => s.title).join(', ');
+            const sections = currentOutline.map(s => s.title).join(', ');
             outlineDescription.textContent = `목차 구성: ${sections}`;
         }
 
@@ -1756,6 +1757,16 @@
             if (e.target.tagName === 'BUTTON') {
                 outlineButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
                 e.target.classList.add('active');
+                if (e.target.dataset.value === '세부목차') {
+                    const baseTitles = planOutlineDefinitions["기본목차"].map(s => s.title);
+                    const detailTitles = planOutlineDefinitions["세부목차"].map(s => s.title);
+                    currentOutline = planOutlineDefinitions["기본목차"].filter(s => detailTitles.includes(s.title));
+                    planOutlineDefinitions["세부목차"].forEach(sec => {
+                        if (!baseTitles.includes(sec.title)) currentOutline.push(sec);
+                    });
+                } else {
+                    currentOutline = [...planOutlineDefinitions["기본목차"]];
+                }
                 updateOutlineDescription();
             }
         });
@@ -1818,8 +1829,7 @@
 
             try {
                 let prompt = '';
-                const outlineName = outlineButtons.querySelector('.active').dataset.value;
-                const outline = planOutlineDefinitions[outlineName];
+                const outline = currentOutline;
                 const category = planCategoryInput.value;
                 const focusInstruction = categoryFocus[category] || '';
                 prompt = `당신은 대한민국의 유능한 교사입니다. 다음 조건에 맞춰 '${schoolLevel} ${planType}' 초안을 작성해 주세요.\n\n`;
@@ -2542,19 +2552,36 @@ async function saveCurrentPlan() {
         });
 
         if (mergePlanBtn) {
-            mergePlanBtn.addEventListener('click', () => {
+            mergePlanBtn.addEventListener('click', async () => {
                 const sections = planContainer.querySelectorAll('.plan-section');
-                let markdown = `# ${planTitle.textContent}\n\n`;
+                let markdown = '';
                 sections.forEach(sec => {
                     const title = sec.querySelector('h3').textContent;
                     const content = sec.dataset.markdownContent || sec.querySelector('.plan-section-content').innerText.trim();
                     markdown += `## ${title}\n${content}\n\n`;
                 });
-                const popup = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
-                if (popup) {
-                    const html = parseMarkdown(markdown);
-                    popup.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${planTitle.textContent}</title><style>body{font-family:'Noto Sans KR',sans-serif;padding:1rem;} table{width:100%;border-collapse:collapse;} th,td{border:1px solid #cbd5e1;padding:0.75rem;text-align:left;} th{background-color:#f1f5f9;font-weight:600;}</style></head><body><button id="copyTextBtn">텍스트 복사</button><div id="content">${html}</div><script>const textOnly=(()=>{const c=document.getElementById('content').cloneNode(true);c.querySelectorAll('table').forEach(t=>t.remove());return c.innerText.trim();})();document.getElementById('copyTextBtn').addEventListener('click',function(){navigator.clipboard.writeText(textOnly).then(()=>alert('내용이 복사되었습니다.'));});function copyTable(tbl){navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([tbl.outerHTML],{type:'text/html'}),'text/plain':new Blob([tbl.innerText],{type:'text/plain'})})]).then(()=>alert('표가 복사되었습니다.'));}document.querySelectorAll('table').forEach(t=>{const b=document.createElement('button');b.textContent='표 복사';b.addEventListener('click',()=>copyTable(t));t.parentNode.insertBefore(b,t);});<\/script></body></html>`);
-                    popup.document.close();
+                try {
+                    showToast('요약본 생성 중입니다..');
+                    const response = await fetch('/.netlify/functions/generatePlan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            prompt: `다음 계획서 내용을 A4 한 장 분량으로 요약해줘.\n\n${markdown}`
+                        })
+                    });
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        const summaryMarkdown = extractMarkdownFromText(text);
+                        const html = parseMarkdown(summaryMarkdown);
+                        const popup = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+                        if (popup) {
+                            popup.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>요약본</title></head><body>${html}</body></html>`);
+                            popup.document.close();
+                        }
+                    }
+                } catch (err) {
+                    console.error('Summary Error:', err);
                 }
             });
         }
