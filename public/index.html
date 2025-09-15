@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>에이두 티쳐 - AI 학교 운영계획서</title>
+    <title>에이두 플랜 - AI 학교 운영계획서</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -92,7 +92,7 @@
         <!-- Auth View (Login/Signup) -->
         <div id="auth-view" class="min-h-screen flex items-center justify-center bg-gray-100">
             <div class="w-full max-w-md bg-white rounded-lg shadow-md p-8">
-                <h2 class="text-2xl font-bold text-center text-[#7A9D54] mb-6">에이두 티쳐 시작하기</h2>
+                <h2 class="text-2xl font-bold text-center text-[#7A9D54] mb-6">에이두 플랜 시작하기</h2>
                 <form id="auth-form" onsubmit="return false;">
                     <div class="mb-4">
                         <label for="email" class="block text-gray-700 text-sm font-bold mb-2">이메일</label>
@@ -124,7 +124,7 @@
         <div id="main-app-view" class="hidden flex-col min-h-screen">
             <header class="bg-white shadow-md w-full sticky top-0 z-50">
                 <div class="container mx-auto px-6 py-3 flex justify-between items-center">
-                    <h1 class="text-2xl font-bold text-[#7A9D54]"><a href="#home" id="home-link">📝 에이두 티쳐</a></h1>
+                    <h1 class="text-2xl font-bold text-[#7A9D54]"><a href="#home" id="home-link">📝 에이두 플랜</a></h1>
                     <nav class="flex items-center gap-4">
                         <span id="user-email" class="text-sm text-gray-600"></span>
                         <a href="#home" id="nav-home" class="nav-link">홈</a>
@@ -143,7 +143,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
                             <h3 class="text-xl font-bold mb-2">안녕하세요, <span id="home-user-email"></span> 선생님!</h3>
-                            <p class="text-gray-600 mb-4">에이두 티쳐와 함께 학교의 업무를 간편히 관리해보세요.</p>
+                            <p class="text-gray-600 mb-4">에이두 플랜과 함께 학교의 업무를 간편히 관리해보세요.</p>
                         </div>
                         <div class="bg-white p-6 rounded-lg shadow-lg">
                             <h3 class="text-xl font-bold mb-4">생성 통계</h3>
@@ -180,26 +180,26 @@
                                 <div class="mt-4">
                                     <label class="block text-sm font-medium text-gray-700 mb-2">목차</label>
                                     <div id="outline-buttons" class="flex flex-wrap gap-2">
-                                        <button type="button" data-value="기본 목차" class="outline-btn py-1 px-2 rounded text-xs active">기본 목차</button>
-                                        <button type="button" data-value="간단 목차A" class="outline-btn py-1 px-2 rounded text-xs">간단 목차A</button>
-                                        <button type="button" data-value="간단 목차B" class="outline-btn py-1 px-2 rounded text-xs">간단 목차B</button>
-                                        <button type="button" data-value="행정 목차" class="outline-btn py-1 px-2 rounded text-xs">행정 목차</button>
+                                        <button type="button" data-value="기본목차" class="outline-btn py-1 px-2 rounded text-xs active">기본목차</button>
+                                        <button type="button" data-value="세부목차" class="outline-btn py-1 px-2 rounded text-xs">세부목차</button>
                                     </div>
                                     <div id="outline-description" class="mt-2 text-xs text-gray-600"></div>
                                 </div>
                                 <div class="mt-4">
                                     <label class="block text-sm font-medium text-gray-700 mb-2">분류</label>
-                                    <input type="hidden" id="plan-category" value="정책 기획">
+                                    <input type="hidden" id="plan-category" value="정책">
                                     <div id="category-buttons" class="flex flex-wrap gap-2">
-                                        <button type="button" data-value="정책 기획" class="category-btn py-1 px-2 rounded text-xs active">정책 기획</button>
-                                        <button type="button" data-value="행사 기획" class="category-btn py-1 px-2 rounded text-xs">행사 기획</button>
-                                        <button type="button" data-value="장학 기획" class="category-btn py-1 px-2 rounded text-xs">장학 기획</button>
+                                        <button type="button" data-value="정책" class="category-btn py-1 px-2 rounded text-xs active">정책</button>
+                                        <button type="button" data-value="교육" class="category-btn py-1 px-2 rounded text-xs">교육</button>
+                                        <button type="button" data-value="지원" class="category-btn py-1 px-2 rounded text-xs">지원</button>
+                                        <button type="button" data-value="기획" class="category-btn py-1 px-2 rounded text-xs">기획</button>
+                                        <button type="button" data-value="기타" class="category-btn py-1 px-2 rounded text-xs">기타</button>
                                     </div>
-                                    <div id="category-description" class="mt-2 text-xs text-gray-600"></div>
+                                    <div id="category-description" class="mt-2 text-xs text-gray-600 whitespace-pre-line"></div>
                                 </div>
                                 <div class="mt-4">
                                     <label class="block text-sm font-medium text-gray-700 mb-2">계획서 주제</label>
-                                    <input type="text" id="custom-plan-type" placeholder="계획서 주제를 직접 입력하세요" class="block w-full mt-2 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 sm:text-sm">
+                                    <input type="text" id="custom-plan-type" placeholder="0000 운영계획" class="block w-full mt-2 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 sm:text-sm">
                                 </div>
                                 
                                 <div>
@@ -219,7 +219,8 @@
                                 <button type="submit" id="generate-btn" class="w-full bg-[#7A9D54] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#6a8a4a] flex items-center justify-center">AI 운영계획서 생성</button>
                             </form>
                             <div class="bg-white p-6 rounded-lg shadow hidden" id="plan-modify-section">
-                                <h3 class="text-lg font-semibold mb-4">수정 테이블</h3>
+                                <h3 class="text-lg font-semibold mb-2">수정 테이블</h3>
+                                <p class="text-sm text-gray-600 mb-4">수정하고자 하는 목차를 변경 목차에서 정하고, 수정 내용을 작성 후 엔터를 눌러보세요.</p>
                                 <form id="plan-modify-form" class="space-y-4">
                                     <div>
                                         <label for="plan-modify-target" class="block text-sm font-medium text-gray-700">수정 목차</label>
@@ -594,51 +595,39 @@
             .then(text => { planExamples = text; });
 
         const planOutlineDefinitions = {
-            "기본 목차": [
+            "기본목차": [
+                { title: "근거", type: "bullet" },
+                { title: "목적", type: "bullet" },
+                { title: "방침", type: "bullet" },
+                { title: "세부 추진 계획", type: "tablePlan" },
+                { title: "기대효과", type: "bullet" }
+            ],
+            "세부목차": [
                 { title: "추진 배경", type: "bullet" },
                 { title: "추진 근거", type: "bullet" },
                 { title: "추진 목적", type: "bullet" },
                 { title: "추진 방향", type: "bullet" },
                 { title: "세부 추진 계획", type: "tablePlan" },
-                { title: "예산 운영 계획", type: "tableBudget" },
+                { title: "예산 운용 계획", type: "tableBudget" },
                 { title: "추진 일정", type: "tableSchedule" },
                 { title: "기대효과", type: "bullet" }
-            ],
-            "간단 목차A": [
-                { title: "근거", type: "bullet" },
-                { title: "목적", type: "bullet" },
-                { title: "방침", type: "bullet" },
-                { title: "세부 추진 계획", type: "tablePlan" },
-                { title: "기대효과", type: "bullet" }
-            ],
-            "간단 목차B": [
-                { title: "추진 근거", type: "bullet" },
-                { title: "추진 목적", type: "bullet" },
-                { title: "추진 방침", type: "bullet" },
-                { title: "주요 추진 과제", type: "bullet" },
-                { title: "추진 일정", type: "tableSchedule" },
-                { title: "기대 효과", type: "bullet" }
-            ],
-            "행정 목차": [
-                { title: "목적", type: "bullet" },
-                { title: "근거", type: "bullet" },
-                { title: "방침", type: "bullet" },
-                { title: "세부 추진 계획", type: "tablePlan" },
-                { title: "기대 효과", type: "bullet" },
-                { title: "행정사항", type: "bullet" }
             ]
         };
 
         const categoryExamples = {
-            "정책 기획": "예시 주제: 기본계획, 추진계획(활성화 계획, 지원계획)",
-            "행사 기획": "예시 주제: 워크숍 계획, 축제 계획, 협의회 계획",
-            "장학 기획": "예시 주제: 컨설팅 계획, 정책 기획, 제작 및 보급 계획"
+            "정책": "- 연간 교육정책 추진계획\n- 중장기 발전계획 수립\n- 예산 편성 및 집행 계획\n- 재정 효율화 운영계획\n- 교원 인사 이동 및 수급 계획\n- 교직원 복지·근무환경 개선 계획\n- 교원 역량 강화 연수 운영계획",
+            "교육": "- 기초학력 향상 및 문해력 교육계획\n- 유·초 연계 교육 프로그램 운영계획\n- 중등학교 진로·진학 지도 계획\n- 교육과정 편성·운영 및 평가 혁신계획\n- 특수교육 대상 학생 지원계획\n- 개별화교육계획(IEP) 운영방안\n- 인성·민주시민교육 운영계획\n- 학교폭력 예방 및 생활교육 프로그램\n- 봉사·나눔 활동 운영계획",
+            "지원": "- 학생 건강검진 및 체육활동 운영계획\n- 학교 안전점검 및 위기대응 매뉴얼\n- 학교 생활 안전·보건 관리 계획\n- 미래형 학습환경 구축 계획 (AI·SW·메타버스 등)\n- 디지털 기반 교육혁신 추진계획\n- 정보화·스마트교육 활성화 운영계획",
+            "기획": "자유도 높은 운영계획 작성 방식입니다. 특정 내용을 반영하지 마세요.",
+            "기타": ""
         };
 
         const categoryFocus = {
-            "정책 기획": "목적, 내용, 방법에 주안점을 두어 작성하세요.",
-            "행사 기획": "목적, 세부 시행 계획에 주안점을 두어 작성하세요.",
-            "장학 기획": "현장연계성, 장학 내용 등에 주안점을 두어 작성하세요."
+            "정책": "정책 방향과 예산 및 인사 계획에 주안점을 두어 작성하세요.",
+            "교육": "교육 내용과 학생 지원에 주안점을 두어 작성하세요.",
+            "지원": "안전, 건강, 미래교육 지원 방안에 주안점을 두어 작성하세요.",
+            "기획": "자유롭게 작성하세요.",
+            "기타": ""
         };
 
         function updateOutlineDescription() {
@@ -2328,7 +2317,7 @@ async function saveCurrentPlan() {
                         prompt += `예시 ${idx + 1} (${file.name}):\n${file.text}\n\n`;
                     });
                 }
-                prompt += `'세부 추진 계획'을 Markdown 표 형식으로 출력해줘. 표에는 '목표', '추진방향', '추진 일정', '예산 관련', '예산 운영 계획', '기대효과' 항목은 포함하지 마.`;
+                prompt += `'세부 추진 계획'을 Markdown 표 형식으로 출력해줘. 표에는 '목표', '추진방향', '추진 일정', '예산 관련', '예산 운용 계획', '기대효과' 항목은 포함하지 마.`;
                 try {
                     showToast('세부 추진 계획 생성 중입니다..');
                     const response = await fetch('/.netlify/functions/generatePlan', {
@@ -2495,7 +2484,7 @@ async function saveCurrentPlan() {
                             prompt += `예시 ${idx + 1} (${file.name}):\n${file.text}\n\n`;
                         });
                     }
-                    prompt += `'세부 추진 계획'을 Markdown 표 형식으로 출력해줘. 표에는 '목표', '추진방향', '추진 일정', '예산 관련', '예산 운영 계획', '기대효과' 항목은 포함하지 마.`;
+                    prompt += `'세부 추진 계획'을 Markdown 표 형식으로 출력해줘. 표에는 '목표', '추진방향', '추진 일정', '예산 관련', '예산 운용 계획', '기대효과' 항목은 포함하지 마.`;
                 } else if (isExpand) {
                     if (secTitle.includes('추진 배경') || secTitle.includes('방향') || secTitle.includes('방침')) {
                         prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 리스트는 그대로 유지하고 항목의 개수를 늘리지 말아줘. 대신 각 불릿의 표현을 더욱 구체적으로 작성해줘. 각 항목은 주제나 항목명을 쓰지 말고 바로 내용을 시작하며 문장이 아닌 명사형 표현으로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
