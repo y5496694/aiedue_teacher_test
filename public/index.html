@@ -1758,12 +1758,7 @@
                 outlineButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
                 e.target.classList.add('active');
                 if (e.target.dataset.value === '세부목차') {
-                    const baseTitles = planOutlineDefinitions["기본목차"].map(s => s.title);
-                    const detailTitles = planOutlineDefinitions["세부목차"].map(s => s.title);
-                    currentOutline = planOutlineDefinitions["기본목차"].filter(s => detailTitles.includes(s.title));
-                    planOutlineDefinitions["세부목차"].forEach(sec => {
-                        if (!baseTitles.includes(sec.title)) currentOutline.push(sec);
-                    });
+                    currentOutline = [...planOutlineDefinitions["세부목차"]];
                 } else {
                     currentOutline = [...planOutlineDefinitions["기본목차"]];
                 }
@@ -2566,7 +2561,7 @@ async function saveCurrentPlan() {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            prompt: `다음 계획서 내용을 A4 한 장 분량으로 요약해줘.\n\n${markdown}`
+                            prompt: `다음 계획서 내용을 A4용지 한 장에 들어갈 분량으로 요약해줘.\n\n${markdown}`
                         })
                     });
                     const result = await response.json();
