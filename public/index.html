@@ -2072,6 +2072,60 @@
             return text.replace(/([^\n])○/g, '$1\n○');
         }
 
+        function extractBulletItems(markdown) {
+            const lines = (markdown || '').split('\n');
+            const items = [];
+            let current = null;
+            lines.forEach(rawLine => {
+                const line = rawLine.trim();
+                if (!line) return;
+                if (/^[-*]\s+/.test(line)) {
+                    if (current) items.push(current);
+                    current = line.replace(/^[-*]\s+/, '').trim();
+                } else if (/^[○●◦]\s*/.test(line)) {
+                    if (current) items.push(current);
+                    current = line.replace(/^[○●◦]\s*/, '').trim();
+                } else if (!line.startsWith('|')) {
+                    if (current) {
+                        current += ' ' + line;
+                    } else {
+                        current = line;
+                    }
+                }
+            });
+            if (current) items.push(current);
+            return items;
+        }
+
+        function normalizeBulletList(markdown, { desiredCount = null, referenceItems = [], referenceSuffix = '' } = {}) {
+            let items = extractBulletItems(markdown);
+            if (!items.length && markdown && markdown.trim()) {
+                items = markdown.split('\n').map(line => line.trim()).filter(Boolean);
+            }
+            const cleanReference = referenceItems.filter(item => item && item.trim()).map(item => item.trim());
+            if (desiredCount !== null) {
+                items = items.slice(0, desiredCount);
+                while (items.length < desiredCount) {
+                    const ref = cleanReference[items.length] || cleanReference[cleanReference.length - 1] || '';
+                    if (ref) {
+                        items.push(referenceSuffix ? `${ref}${referenceSuffix}` : ref);
+                    } else if (items.length) {
+                        items.push(items[items.length - 1]);
+                    } else {
+                        items.push('추가 항목');
+                    }
+                }
+            }
+            if (!items.length && cleanReference.length) {
+                items = cleanReference.map(ref => referenceSuffix ? `${ref}${referenceSuffix}` : ref);
+            }
+            return items
+                .map(item => item.replace(/^[-*]\s+/, '').replace(/^[○●◦]\s*/, '').trim())
+                .filter(Boolean)
+                .map(item => `- ${item}`)
+                .join('\n');
+        }
+
         function parseMarkdown(markdown) {
             const plainMarkdown = ensureBulletNewlines(markdown.replace(/\*\*(.*?)\*\*/g, '$1'));
             return marked.parse(plainMarkdown);
@@ -2396,6 +2450,7 @@ async function saveCurrentPlan() {
                 }
             } else if (button.classList.contains('regenerate-section-btn')) {
                 const secTitle = sectionDiv.querySelector('h3').textContent;
+                const previousMarkdown = sectionDiv.dataset.markdownContent || '';
                 const sections = planContainer.querySelectorAll('.plan-section');
                 let otherSections = '';
                 sections.forEach(sec => {
@@ -2409,12 +2464,25 @@ async function saveCurrentPlan() {
                 if (otherSections) {
                     prompt += `다른 항목 내용:\n${otherSections}`;
                 }
+                let referencePurposeBullets = [];
+                let desiredEffectBulletCount = null;
                 if (secTitle.includes('기대효과')) {
                     const purposeSection = Array.from(sections).find(sec => sec.querySelector('h3').textContent.includes('추진 목적'));
                     if (purposeSection) {
                         const purposeContent = purposeSection.dataset.markdownContent || '';
-                        prompt += `추진 목적:\n${purposeContent}\n\n위 추진 목적과 맥락이 맞도록 작성해줘.`;
+                        referencePurposeBullets = extractBulletItems(purposeContent);
+                        prompt += `추진 목적:\n${purposeContent}\n\n`;
+                        if (referencePurposeBullets.length) {
+                            desiredEffectBulletCount = referencePurposeBullets.length;
+                            prompt += `출력은 반드시 '-'로 시작하는 마크다운 불릿 포인트 ${referencePurposeBullets.length}개로 작성하고, 각 항목은 위 추진 목적 각각에 대응되는 기대 효과를 명사형 표현으로 정리해줘.`;
+                        } else {
+                            prompt += `출력은 반드시 '-'로 시작하는 마크다운 불릿 포인트 형식으로 작성하고, 각 항목은 명사형 표현으로 끝나게 해줘.`;
+                        }
+                    } else {
+                        prompt += `출력은 반드시 '-'로 시작하는 마크다운 불릿 포인트 형식으로 작성하고, 각 항목은 명사형 표현으로 끝나게 해줘.`;
                     }
+                } else if (secTitle.includes('추진 목적')) {
+                    prompt += `출력은 반드시 '-'로 시작하는 마크다운 불릿 포인트 형식을 유지하고, 각 항목은 명사형 표현으로 작성해줘.`;
                 }
                 try {
                     showToast('재생성 중입니다..');
@@ -2430,6 +2498,21 @@ async function saveCurrentPlan() {
                         const lines = markdown.split('\n');
                         if (lines[0].startsWith('##')) lines.shift();
                         let newContent = lines.join('\n').trim();
+                        if (secTitle.includes('기대효과')) {
+                            const referenceItems = referencePurposeBullets.length ? referencePurposeBullets : extractBulletItems(previousMarkdown);
+                            const referenceSuffix = referencePurposeBullets.length ? ' 관련 기대 효과' : '';
+                            newContent = normalizeBulletList(newContent, {
+                                desiredCount: desiredEffectBulletCount,
+                                referenceItems,
+                                referenceSuffix
+                            });
+                        } else if (secTitle.includes('추진 목적')) {
+                            const existingBullets = extractBulletItems(previousMarkdown);
+                            newContent = normalizeBulletList(newContent, {
+                                desiredCount: existingBullets.length || null,
+                                referenceItems: existingBullets
+                            });
+                        }
                         sectionDiv.dataset.markdownContent = newContent;
                         contentDiv.innerHTML = parseMarkdown(newContent);
                         addTableCopyButtons(contentDiv);
@@ -2476,10 +2559,10 @@ async function saveCurrentPlan() {
                 const isExpand = button.classList.contains('expand-btn');
                 const secTitle = sectionDiv.querySelector('h3').textContent;
                 const secMarkdown = sectionDiv.dataset.markdownContent;
+                const sections = planContainer.querySelectorAll('.plan-section');
                 let prompt;
                 if (button.classList.contains('detail-btn') && secTitle.includes('세부 추진 계획')) {
                     let otherSections = '';
-                    const sections = planContainer.querySelectorAll('.plan-section');
                     sections.forEach(sec => {
                         const title = sec.querySelector('h3').textContent;
                         if (title !== secTitle) {
@@ -2510,12 +2593,16 @@ async function saveCurrentPlan() {
                     } else if (secTitle.includes('추진 목적') || secTitle.includes('기대효과')) {
                         const bulletCount = (secMarkdown.match(/^- /gm) || []).length;
                         const targetCount = Math.ceil(bulletCount * 1.5);
-                        prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 항목들을 유지하면서 새로운 불릿을 추가해 전체 항목 수가 약 ${targetCount}개가 되도록 해줘. 각 항목은 문장이 아닌 명사형 표현으로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
+                        prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 항목들을 유지하면서 새로운 불릿을 추가해 전체 항목 수가 약 ${targetCount}개가 되도록 해줘. 각 항목은 문장이 아닌 명사형 표현으로 끝나게 해줘. 모든 항목은 '- '로 시작하는 마크다운 불릿 포인트 형식으로 출력해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
                     } else {
                         prompt = `다음 계획서 항목의 내용을 확장해줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하되, 항목의 개수를 늘려줘. 자세한 설명을 추가하는 대신 새로운 불릿이나 표 행을 추가해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
                     }
                 } else {
-                    prompt = `다음 계획서 항목의 내용을 구체적으로 작성해줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하고, 항목의 개수는 늘리지 말며 각 항목의 설명을 더욱 자세하게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
+                    if (secTitle.includes('추진 목적') || secTitle.includes('기대효과')) {
+                        prompt = `다음 계획서 항목의 내용을 구체적으로 작성해줘. 기존의 불릿 리스트는 그대로 유지하고, 항목의 개수는 늘리지 말며 각 항목의 설명을 더욱 자세하게 해줘. 모든 항목은 '- '로 시작하는 마크다운 불릿 포인트 형식으로 작성하고 문장이 아닌 명사형 표현으로 끝나게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
+                    } else {
+                        prompt = `다음 계획서 항목의 내용을 구체적으로 작성해줘. 기존의 불릿 리스트나 표 형식은 그대로 유지하고, 항목의 개수는 늘리지 말며 각 항목의 설명을 더욱 자세하게 해줘.\n## ${secTitle}\n${secMarkdown}\n\n'## ${secTitle}' 형식의 마크다운으로 출력해줘.`;
+                    }
                 }
                 try {
                     showToast(isExpand ? '내용 늘리는 중입니다..' : '자세하게 작성 중입니다..');
@@ -2535,6 +2622,25 @@ async function saveCurrentPlan() {
                             newContent = newContent.replace(/합니다\./gm, '한다.').replace(/합니다$/gm, '한다').replace(/함\./gm, '한다.').replace(/함$/gm, '한다');
                         }
                         newContent = removeBudgetInfo(newContent);
+                        if (secTitle.includes('추진 목적') || secTitle.includes('기대효과')) {
+                            const baseReference = extractBulletItems(secMarkdown);
+                            const options = { referenceItems: baseReference };
+                            if (!isExpand && baseReference.length) {
+                                options.desiredCount = baseReference.length;
+                            }
+                            if (secTitle.includes('기대효과')) {
+                                const purposeSection = Array.from(sections).find(sec => sec.querySelector('h3').textContent.includes('추진 목적'));
+                                const purposeBullets = extractBulletItems(purposeSection ? purposeSection.dataset.markdownContent || '' : '');
+                                if (purposeBullets.length) {
+                                    options.referenceItems = baseReference.length ? baseReference : purposeBullets;
+                                    if (!isExpand && !options.desiredCount) {
+                                        options.desiredCount = purposeBullets.length;
+                                    }
+                                    options.referenceSuffix = ' 관련 기대 효과';
+                                }
+                            }
+                            newContent = normalizeBulletList(newContent, options);
+                        }
                         sectionDiv.dataset.markdownContent = newContent;
                         contentDiv.innerHTML = parseMarkdown(newContent);
                         addTableCopyButtons(contentDiv);
