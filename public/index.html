@@ -864,8 +864,7 @@
 
             copyTableBtn.addEventListener('click', () => {
                 if (!currentTableMarkdown) return;
-                const htmlToCopy = markdownTableToHtmlClipboard(currentTableMarkdown);
-                copyToClipboard(htmlToCopy, true);
+                copyToClipboard(currentTableMarkdown, false, '표(마크다운)가 클립보드에 복사되었습니다.');
             });
 
             tableModifyForm.addEventListener('submit', async (e) => {
@@ -2206,7 +2205,7 @@
             return text.replace(/```(?:html|markdown|md)?/g, '').trim();
         }
 
-        function copyToClipboard(text, isHtml = false) {
+        function copyToClipboard(text, isHtml = false, customMessage = null) {
             const listener = (e) => {
                 e.preventDefault();
                 if (isHtml) {
@@ -2219,7 +2218,11 @@
             document.addEventListener('copy', listener);
             document.execCommand('copy');
             document.removeEventListener('copy', listener);
-            showToast(isHtml ? '표(HTML)가 클립보드에 복사되었습니다.' : '내용이 클립보드에 복사되었습니다.');
+            if (customMessage) {
+                showToast(customMessage);
+            } else {
+                showToast(isHtml ? '표(HTML)가 클립보드에 복사되었습니다.' : '내용이 클립보드에 복사되었습니다.');
+            }
         }
 
         function addTableCopyButtons(container) {
@@ -2230,6 +2233,36 @@
                 btn.textContent = '표 복사';
                 table.parentNode.insertBefore(btn, table);
             });
+        }
+
+        function htmlTableToMarkdown(table) {
+            if (!table) return '';
+            const getCellText = (cell) => {
+                return cell.innerText
+                    .replace(/\r?\n+/g, '<br>')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            };
+
+            const headerRows = table.tHead && table.tHead.rows.length ? Array.from(table.tHead.rows) : [];
+            const bodyRows = table.tBodies && table.tBodies.length ? Array.from(table.tBodies).flatMap(tb => Array.from(tb.rows)) : [];
+            const allRows = !headerRows.length ? Array.from(table.rows) : bodyRows;
+
+            const headerCells = headerRows.length ? Array.from(headerRows[0].cells) : (allRows.length ? Array.from(allRows.shift().cells) : []);
+            if (!headerCells.length) return '';
+
+            const colCount = Math.max(headerCells.length, ...allRows.map(row => row.cells.length));
+            const normalizeRow = (cells) => {
+                const values = cells.map(getCellText);
+                while (values.length < colCount) values.push('');
+                return `| ${values.join(' | ')} |`;
+            };
+
+            const headerMarkdown = normalizeRow(headerCells);
+            const separator = `| ${Array(colCount).fill('---').join(' | ')} |`;
+            const bodyMarkdown = allRows.map(row => normalizeRow(Array.from(row.cells))).join('\n');
+
+            return [headerMarkdown, separator, bodyMarkdown].filter(Boolean).join('\n');
         }
 
         function showToast(message) {
@@ -2529,8 +2562,13 @@ async function saveCurrentPlan() {
                 let table = button.nextElementSibling;
                 if (!table || table.tagName !== 'TABLE') table = button.previousElementSibling;
                 if (table && table.tagName === 'TABLE') {
-                    const htmlToCopy = htmlTableToHtmlClipboard(table);
-                    copyToClipboard(htmlToCopy, true);
+                    const markdownToCopy = htmlTableToMarkdown(table);
+                    if (markdownToCopy) {
+                        copyToClipboard(markdownToCopy, false, '표(마크다운)가 클립보드에 복사되었습니다.');
+                    } else {
+                        const htmlToCopy = htmlTableToHtmlClipboard(table);
+                        copyToClipboard(htmlToCopy, true);
+                    }
                 }
             } else if (button.classList.contains('edit-btn')) {
                 if (button.textContent === '편집') { // Start editing
