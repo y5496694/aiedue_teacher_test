@@ -2665,11 +2665,23 @@ async function saveCurrentPlan() {
         if (mergePlanBtn) {
             mergePlanBtn.addEventListener('click', async () => {
                 const sections = planContainer.querySelectorAll('.plan-section');
-                let markdown = '';
-                sections.forEach(sec => {
+                const sectionData = Array.from(sections).map(sec => {
                     const title = sec.querySelector('h3').textContent;
                     const content = sec.dataset.markdownContent || sec.querySelector('.plan-section-content').innerText.trim();
-                    markdown += `## ${title}\n${content}\n\n`;
+                    return {
+                        title,
+                        content,
+                        isDetail: title.includes('세부 추진 계획')
+                    };
+                });
+                let prompt = `다음은 학교 업무 계획서의 항목들이다.\n`;
+                prompt += `- 제목에 '세부 추진 계획'이 포함된 항목만 핵심이 드러나도록 요약해줘.\n`;
+                prompt += `- 다른 모든 항목은 글자, 줄바꿈, 표 형식을 포함해 제공된 내용을 한 글자도 수정하지 말고 그대로 출력해줘.\n`;
+                prompt += `- 출력 순서와 형식은 입력과 동일하게 유지하고, 각 항목은 '## 제목' 헤더 아래에 작성해줘.\n`;
+                prompt += `- 표가 있는 경우 마크다운 표 형식을 반드시 유지해줘.\n`;
+                prompt += `아래에 각 항목의 원본이 [항목 시작]과 [항목 종료] 사이에 제공돼.\n`;
+                sectionData.forEach(({ title, content, isDetail }) => {
+                    prompt += `\n[항목 시작]\n제목: ${title}\n처리 방식: ${isDetail ? '요약' : '원문 유지'}\n내용:\n${content}\n[항목 종료]\n`;
                 });
                 try {
                     showToast('요약본 생성 중입니다..');
@@ -2677,7 +2689,7 @@ async function saveCurrentPlan() {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            prompt: `다음 계획서 내용을 A4용지 한 장에 들어갈 분량으로 요약해줘.\n\n${markdown}`
+                            prompt
                         })
                     });
                     const result = await response.json();
