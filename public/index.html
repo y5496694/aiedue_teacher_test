@@ -54,6 +54,10 @@
         .plan-section-content td { border: 1px solid #cbd5e1; padding: 0.75rem; text-align: left; }
         .plan-section-content td { white-space: pre-line; }
         .plan-section-content th { background-color: #f1f5f9; font-weight: 600; }
+        #generated-official-container .official-plain-text {
+            white-space: normal;
+            line-height: 1.7;
+        }
         .edit-btn, .copy-section-btn, .copy-table-btn, .expand-btn, .detail-btn, .generate-detail-btn, .regenerate-detail-btn, .regenerate-section-btn {
             background-color: #e2e8f0;
             color: #475569;
@@ -1210,7 +1214,7 @@
                         currentOfficialTitle = lines.shift().trim();
                         currentOfficialMarkdown = lines.join('\n').trim();
                         officialTitle.textContent = currentOfficialTitle;
-                        generatedOfficialContainer.innerHTML = parseMarkdown(currentOfficialMarkdown);
+                        generatedOfficialContainer.innerHTML = renderOfficialContent(currentOfficialMarkdown);
                         officialOutputSection.classList.remove('hidden');
                         officialModifySection.classList.remove('hidden');
                         officialTopic.value = '';
@@ -1246,7 +1250,7 @@
                     const newDiv = document.createElement('div');
                     newDiv.id = 'generated-official-container';
                     newDiv.className = 'plan-section-content';
-                    newDiv.innerHTML = parseMarkdown(currentOfficialMarkdown);
+                    newDiv.innerHTML = renderOfficialContent(currentOfficialMarkdown);
                     textarea.replaceWith(newDiv);
                     generatedOfficialContainer = newDiv;
                     isEditingOfficial = false;
@@ -1311,7 +1315,7 @@
                             const textarea = document.getElementById('official-editor');
                             textarea.value = currentOfficialMarkdown;
                         } else {
-                            generatedOfficialContainer.innerHTML = parseMarkdown(currentOfficialMarkdown);
+                            generatedOfficialContainer.innerHTML = renderOfficialContent(currentOfficialMarkdown);
                         }
                         saveCurrentOfficial();
                         officialModifyPrompt.value = '';
@@ -1727,7 +1731,7 @@
                 currentOfficialTitle = data.title;
                 currentOfficialMarkdown = data.rawContent;
                 officialTitle.textContent = currentOfficialTitle;
-                generatedOfficialContainer.innerHTML = parseMarkdown(currentOfficialMarkdown);
+                generatedOfficialContainer.innerHTML = renderOfficialContent(currentOfficialMarkdown);
                 officialOutputSection.classList.remove('hidden');
                 officialModifySection.classList.remove('hidden');
             }
@@ -2129,6 +2133,35 @@
                 .filter(Boolean)
                 .map(item => `- ${item}`)
                 .join('\n');
+        }
+
+        function escapeHtml(text = '') {
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderOfficialContent(markdown = '') {
+            const plainText = ensureBulletNewlines(markdown.replace(/\*\*(.*?)\*\*/g, '$1'));
+            const lines = plainText.split('\n');
+            const htmlLines = lines.map(line => {
+                if (!line) return '';
+                const leadingSpacesMatch = line.match(/^\s+/);
+                let content = line;
+                let prefix = '';
+                if (leadingSpacesMatch) {
+                    const leadingSpaces = leadingSpacesMatch[0];
+                    prefix = leadingSpaces
+                        .replace(/ /g, '&nbsp;')
+                        .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
+                    content = line.slice(leadingSpaces.length);
+                }
+                return prefix + escapeHtml(content);
+            });
+            return `<div class="official-plain-text">${htmlLines.join('<br>')}</div>`;
         }
 
         function parseMarkdown(markdown) {
