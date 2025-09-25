@@ -2676,6 +2676,7 @@ async function saveCurrentPlan() {
                 });
                 let prompt = `다음은 학교 업무 계획서의 항목들이다.\n`;
                 prompt += `- 제목에 '세부 추진 계획'이 포함된 항목만 핵심이 드러나도록 요약해줘.\n`;
+                prompt += `- '세부 추진 계획' 항목은 다른 항목과 동일하게 '-'로 시작하는 불릿 포인트 형식으로 핵심을 나열해줘.\n`;
                 prompt += `- 다른 모든 항목은 글자, 줄바꿈, 표 형식을 포함해 제공된 내용을 한 글자도 수정하지 말고 그대로 출력해줘.\n`;
                 prompt += `- 출력 순서와 형식은 입력과 동일하게 유지하고, 각 항목은 '## 제목' 헤더 아래에 작성해줘.\n`;
                 prompt += `- 표가 있는 경우 마크다운 표 형식을 반드시 유지해줘.\n`;
@@ -2695,11 +2696,61 @@ async function saveCurrentPlan() {
                     const result = await response.json();
                     const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
                     if (text) {
-                        const summaryMarkdown = extractMarkdownFromText(text);
+                        let summaryMarkdown = extractMarkdownFromText(text);
+                        summaryMarkdown = summaryMarkdown
+                            .split('\n')
+                            .filter(line => !line.trim().startsWith('처리 방식: 요약 내용'))
+                            .join('\n')
+                            .trim();
                         const html = parseMarkdown(summaryMarkdown);
                         const popup = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
                         if (popup) {
-                            popup.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>요약본</title></head><body>${html}</body></html>`);
+                            const copyScript = `
+                                (function() {
+                                    const summaryMarkdown = ${JSON.stringify(summaryMarkdown)};
+                                    const copy = async () => {
+                                        if (navigator.clipboard && window.isSecureContext) {
+                                            await navigator.clipboard.writeText(summaryMarkdown);
+                                            return true;
+                                        }
+                                        const textarea = document.createElement('textarea');
+                                        textarea.value = summaryMarkdown;
+                                        textarea.style.position = 'fixed';
+                                        textarea.style.left = '-9999px';
+                                        document.body.appendChild(textarea);
+                                        textarea.focus();
+                                        textarea.select();
+                                        let success = false;
+                                        try {
+                                            success = document.execCommand('copy');
+                                        } catch (err) {
+                                            success = false;
+                                        }
+                                        document.body.removeChild(textarea);
+                                        return success;
+                                    };
+                                    const copyBtn = document.getElementById('copy-summary-btn');
+                                    if (copyBtn) {
+                                        copyBtn.addEventListener('click', async () => {
+                                            try {
+                                                const copied = await copy();
+                                                if (copied) {
+                                                    copyBtn.textContent = '복사 완료';
+                                                    setTimeout(() => {
+                                                        copyBtn.textContent = '전문 복사';
+                                                    }, 1500);
+                                                } else {
+                                                    alert('복사에 실패했습니다. 다시 시도해주세요.');
+                                                }
+                                            } catch (err) {
+                                                console.error('Copy failed:', err);
+                                                alert('복사에 실패했습니다. 다시 시도해주세요.');
+                                            }
+                                        });
+                                    }
+                                })();
+                            `;
+                            popup.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>요약본</title><style>body{font-family:'Noto Sans KR',sans-serif;margin:0;padding:0;background:#f8fafc;color:#0f172a;} .summary-container{position:relative;max-width:960px;margin:0 auto;padding:32px;} .summary-content{background:#ffffff;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,0.08);padding:32px;line-height:1.7;} #copy-summary-btn{position:absolute;top:16px;right:16px;background:#1d4ed8;color:#ffffff;border:none;border-radius:24px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(29,78,216,0.25);transition:background 0.2s ease,transform 0.2s ease;} #copy-summary-btn:hover{background:#1e40af;transform:translateY(-1px);} #copy-summary-btn:active{transform:translateY(0);} @media (max-width:600px){.summary-container{padding:24px 16px;} .summary-content{padding:24px;} #copy-summary-btn{top:12px;right:12px;padding:8px 16px;font-size:13px;}}</style></head><body><div class="summary-container"><button id="copy-summary-btn">전문 복사</button><div class="summary-content">${html}</div></div><script>${copyScript}<\/script></body></html>`);
                             popup.document.close();
                         }
                     }
