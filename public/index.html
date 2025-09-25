@@ -36,16 +36,27 @@
             margin-bottom: 1rem;
             padding-left: 0;
         }
-        .plan-section-content li {
+        .plan-section-content ul li {
             margin-bottom: 0.5rem;
             position: relative;
             padding-left: 1em;
         }
-        .plan-section-content li::before {
+        .plan-section-content ul li::before {
             content: "○";
             position: absolute;
             left: -1em;
         }
+        .plan-section-content ol {
+            list-style: decimal;
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+            padding-left: 1.25rem;
+        }
+        .plan-section-content ol li {
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+        .plan-section-content ol li::before { content: none; }
         .plan-section-content ol > li > ul > li::before { content: "□"; }
         .plan-section-content ol > li > ul > li > ul > li::before { content: "○"; }
         .plan-section-content ol > li > ul > li > ul > li > ul > li::before { content: "-"; }
@@ -1200,6 +1211,8 @@
                     prompt += ` 첨부파일이 여러 개인 경우 번호를 붙여 구분해.`;
                 }
                 prompt += ` 제목은 첫 줄에만 작성해. 추가 설명 없이 마크다운으로 작성해.`;
+                prompt += ` 항목은 항상 '1.', '2.'와 같이 숫자 목록 형식으로 작성하고, 불릿 기호는 사용하지 마.`;
+                prompt += ` '붙임' 다음에는 두 칸을 띄우고, '끝.'은 항상 빈 줄을 하나 두고 단독으로 작성해.`;
 
                 try {
                     const response = await fetch('/.netlify/functions/generatePlan', {
@@ -1212,7 +1225,7 @@
                         const fullText = extractMarkdownFromText(result.candidates[0].content.parts[0].text);
                         const lines = fullText.split('\n');
                         currentOfficialTitle = lines.shift().trim();
-                        currentOfficialMarkdown = lines.join('\n').trim();
+                        currentOfficialMarkdown = formatOfficialMarkdown(lines.join('\n').trim());
                         officialTitle.textContent = currentOfficialTitle;
                         generatedOfficialContainer.innerHTML = renderOfficialContent(currentOfficialMarkdown);
                         officialOutputSection.classList.remove('hidden');
@@ -1246,7 +1259,7 @@
                     generatedOfficialContainer.replaceWith(textarea);
                 } else {
                     const textarea = document.getElementById('official-editor');
-                    currentOfficialMarkdown = textarea.value;
+                    currentOfficialMarkdown = formatOfficialMarkdown(textarea.value);
                     const newDiv = document.createElement('div');
                     newDiv.id = 'generated-official-container';
                     newDiv.className = 'plan-section-content';
@@ -1309,7 +1322,7 @@
                         const fullText = extractMarkdownFromText(result.candidates[0].content.parts[0].text);
                         const lines = fullText.split('\n');
                         currentOfficialTitle = lines.shift().trim();
-                        currentOfficialMarkdown = lines.join('\n').trim();
+                        currentOfficialMarkdown = formatOfficialMarkdown(lines.join('\n').trim());
                         officialTitle.textContent = currentOfficialTitle;
                         if (isEditingOfficial) {
                             const textarea = document.getElementById('official-editor');
@@ -1729,7 +1742,7 @@
                 switchView('official');
                 currentOfficialId = id;
                 currentOfficialTitle = data.title;
-                currentOfficialMarkdown = data.rawContent;
+                currentOfficialMarkdown = formatOfficialMarkdown(data.rawContent || '');
                 officialTitle.textContent = currentOfficialTitle;
                 generatedOfficialContainer.innerHTML = renderOfficialContent(currentOfficialMarkdown);
                 officialOutputSection.classList.remove('hidden');
@@ -2144,6 +2157,83 @@
                 .replace(/'/g, '&#39;');
         }
 
+        function formatOfficialMarkdown(markdown = '') {
+            const lines = (markdown || '').split('\n');
+            const formatted = [];
+            let numbering = 1;
+            let insideAttachments = false;
+            lines.forEach((line) => {
+                const indentMatch = line.match(/^\s*/);
+                const indent = indentMatch ? indentMatch[0] : '';
+                let trimmed = line.trim();
+                if (!trimmed) {
+                    formatted.push('');
+                    return;
+                }
+
+                const handleEndLine = () => {
+                    if (formatted.length && formatted[formatted.length - 1] !== '') {
+                        formatted.push('');
+                    }
+                    formatted.push(`${indent}끝.`.trimEnd());
+                    insideAttachments = false;
+                };
+
+                if (/^붙임/.test(trimmed)) {
+                    insideAttachments = true;
+                    let rest = trimmed.replace(/^붙임\s*[:\-]?\s*/, '');
+                    let hasEnding = false;
+                    if (/끝\.$/.test(rest)) {
+                        rest = rest.replace(/끝\.$/, '').trimEnd();
+                        hasEnding = true;
+                    }
+                    const baseLine = rest ? `${indent}붙임  ${rest}` : `${indent}붙임  `;
+                    formatted.push(baseLine.trimEnd());
+                    if (hasEnding) {
+                        handleEndLine();
+                    }
+                    return;
+                }
+
+                if (/^끝\.?$/.test(trimmed)) {
+                    handleEndLine();
+                    return;
+                }
+
+                if (!insideAttachments && /^[○●◦◯•]/.test(trimmed)) {
+                    const content = trimmed.replace(/^[○●◦◯•]\s*/, '').trim();
+                    formatted.push(`${indent}${numbering}. ${content}`.trimEnd());
+                    numbering += 1;
+                    return;
+                }
+
+                if (!insideAttachments && /^[-*]\s+/.test(trimmed)) {
+                    const content = trimmed.replace(/^[-*]\s+/, '').trim();
+                    formatted.push(`${indent}${numbering}. ${content}`.trimEnd());
+                    numbering += 1;
+                    return;
+                }
+
+                if (!insideAttachments) {
+                    const numberMatch = trimmed.match(/^(\d+)\.\s*/);
+                    if (numberMatch) {
+                        numbering = parseInt(numberMatch[1], 10) + 1;
+                        const content = trimmed.slice(numberMatch[0].length).trimStart();
+                        formatted.push(`${indent}${numberMatch[1]}. ${content}`.trimEnd());
+                        return;
+                    }
+                }
+
+                formatted.push(`${indent}${trimmed}`.trimEnd());
+            });
+
+            while (formatted.length > 1 && formatted[formatted.length - 1] === '' && formatted[formatted.length - 2] === '') {
+                formatted.pop();
+            }
+
+            return formatted.join('\n').replace(/[\s\u00a0]+$/, '');
+        }
+
         function renderOfficialContent(markdown = '') {
             const plainText = ensureBulletNewlines(markdown.replace(/\*\*(.*?)\*\*/g, '$1'));
             const lines = plainText.split('\n');
@@ -2159,7 +2249,11 @@
                         .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
                     content = line.slice(leadingSpaces.length);
                 }
-                return prefix + escapeHtml(content);
+                let htmlContent = escapeHtml(content);
+                if (/^붙임\s{2}/.test(content)) {
+                    htmlContent = htmlContent.replace(/^붙임\s{2}/, '붙임&nbsp;&nbsp;');
+                }
+                return prefix + htmlContent;
             });
             return `<div class="official-plain-text">${htmlLines.join('<br>')}</div>`;
         }
@@ -2249,7 +2343,18 @@
                 e.preventDefault();
                 if (isHtml) {
                     e.clipboardData.setData('text/html', text);
-                    e.clipboardData.setData('text/plain', text.replace(/<[^>]*>?/gm, ''));
+                    const plain = text
+                        .replace(/&nbsp;/gi, ' ')
+                        .replace(/<br\s*\/?\s*>/gi, '\n')
+                        .replace(/<\/(p|div|tr)>/gi, '\n')
+                        .replace(/<\/li>/gi, '\n')
+                        .replace(/<li[^>]*>/gi, '')
+                        .replace(/<\/(thead|tbody)>/gi, '')
+                        .replace(/<[^>]*>?/gm, '')
+                        .replace(/\n{3,}/g, '\n\n')
+                        .replace(/[ \t]+\n/g, '\n')
+                        .trimEnd();
+                    e.clipboardData.setData('text/plain', plain);
                 } else {
                     e.clipboardData.setData('text/plain', text);
                 }
