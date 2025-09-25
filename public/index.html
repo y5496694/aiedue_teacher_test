@@ -533,6 +533,9 @@
         const exampleFileInput = document.getElementById('example-file-input');
         const exampleFileList = document.getElementById('example-file-list');
         let exampleFiles = [];
+        let currentPlanSummaryMarkdown = null;
+        let summaryPopupWindow = null;
+        let isSummaryGenerating = false;
 
         exampleUploadBtn.addEventListener('click', () => exampleFileInput.click());
 
@@ -1564,7 +1567,7 @@
                         if (docSnap.exists()) {
                             const planToView = docSnap.data();
                             switchView('plan');
-                            displayContent(planToView.rawContent, planToView.title);
+                            displayContent(planToView.rawContent, planToView.title, planToView.summaryContent || null);
                             currentPlanId = planId;
                             outputPanel.scrollIntoView({ behavior: 'smooth' });
                         }
@@ -1949,7 +1952,7 @@
             }
         });
 
-        function displayContent(rawText, defaultPlanType) {
+        function displayContent(rawText, defaultPlanType, summaryMarkdown = null) {
             let content = rawText;
 
             const titleMatch = content.match(/^TITLE:\s*(.*)/m);
@@ -1958,7 +1961,14 @@
                 content = content.substring(titleMatch[0].length).trim();
             }
             planTitle.textContent = mainTitle;
-            
+
+            currentPlanSummaryMarkdown = summaryMarkdown || null;
+            if (summaryPopupWindow && !summaryPopupWindow.closed) {
+                summaryPopupWindow.close();
+            }
+            summaryPopupWindow = null;
+            isSummaryGenerating = false;
+
             planContainer.innerHTML = '';
 
             const sections = content.split(/^##\s/m).filter(s => s.trim() !== '');
@@ -2387,6 +2397,217 @@
             }, 2000);
         }
 
+        async function saveCurrentSummary(markdown) {
+            currentPlanSummaryMarkdown = markdown;
+            const user = auth.currentUser;
+            if (!user || !currentPlanId) return;
+            try {
+                await updateDoc(doc(db, "users", user.uid, "plans", currentPlanId), {
+                    summaryContent: markdown,
+                    summaryUpdatedAt: serverTimestamp()
+                });
+            } catch (err) {
+                console.error('Summary Save Error:', err);
+            }
+        }
+
+        function showSummaryPopup(summaryMarkdown) {
+            if (!summaryMarkdown) return;
+            const html = parseMarkdown(summaryMarkdown);
+            if (!summaryPopupWindow || summaryPopupWindow.closed) {
+                summaryPopupWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+            }
+            if (!summaryPopupWindow) return;
+            const copyScript = `
+                (function() {
+                    let currentMarkdown = ${JSON.stringify(summaryMarkdown)};
+                    const renderMarkdown = (markdown) => {
+                        if (window.marked) {
+                            return window.marked.parse(markdown);
+                        }
+                        return markdown
+                            .split(/\n\n+/)
+                            .map(block => block.replace(/\n/g, '<br>'))
+                            .join('<br><br>');
+                    };
+                    const copy = async () => {
+                        if (navigator.clipboard && window.isSecureContext) {
+                            await navigator.clipboard.writeText(currentMarkdown);
+                            return true;
+                        }
+                        const textarea = document.createElement('textarea');
+                        textarea.value = currentMarkdown;
+                        textarea.style.position = 'fixed';
+                        textarea.style.left = '-9999px';
+                        document.body.appendChild(textarea);
+                        textarea.focus();
+                        textarea.select();
+                        let success = false;
+                        try {
+                            success = document.execCommand('copy');
+                        } catch (err) {
+                            success = false;
+                        }
+                        document.body.removeChild(textarea);
+                        return success;
+                    };
+                    const copyBtn = document.getElementById('copy-summary-btn');
+                    const toggleEditBtn = document.getElementById('toggle-edit-btn');
+                    const regenerateBtn = document.getElementById('regenerate-summary-btn');
+                    const editArea = document.getElementById('manual-edit-area');
+                    const summaryContent = document.getElementById('summary-content');
+                    const applyManualEdit = () => {
+                        if (!editArea) return;
+                        currentMarkdown = editArea.value;
+                        if (summaryContent) {
+                            summaryContent.innerHTML = renderMarkdown(currentMarkdown);
+                        }
+                    };
+                    if (editArea) {
+                        editArea.addEventListener('input', () => {
+                            currentMarkdown = editArea.value;
+                            if (summaryContent) {
+                                summaryContent.innerHTML = renderMarkdown(currentMarkdown);
+                            }
+                        });
+                    }
+                    if (toggleEditBtn && editArea) {
+                        let isEditing = false;
+                        toggleEditBtn.addEventListener('click', () => {
+                            isEditing = !isEditing;
+                            if (isEditing) {
+                                toggleEditBtn.textContent = '편집 완료';
+                                editArea.value = currentMarkdown;
+                                editArea.classList.remove('hidden');
+                                editArea.focus();
+                            } else {
+                                toggleEditBtn.textContent = '수동 편집';
+                                applyManualEdit();
+                                editArea.classList.add('hidden');
+                            }
+                        });
+                    }
+                    if (copyBtn) {
+                        copyBtn.addEventListener('click', async () => {
+                            try {
+                                applyManualEdit();
+                                const copied = await copy();
+                                if (copied) {
+                                    copyBtn.textContent = '복사 완료';
+                                    setTimeout(() => {
+                                        copyBtn.textContent = '전문 복사';
+                                    }, 1500);
+                                } else {
+                                    alert('복사에 실패했습니다. 다시 시도해주세요.');
+                                }
+                            } catch (err) {
+                                console.error('Copy failed:', err);
+                                alert('복사에 실패했습니다. 다시 시도해주세요.');
+                            }
+                        });
+                    }
+                    if (regenerateBtn) {
+                        const openerWindow = window.opener && !window.opener.closed ? window.opener : null;
+                        const regenerateHandler = openerWindow && openerWindow.generatePlanSummaryFromPopup ? openerWindow.generatePlanSummaryFromPopup : null;
+                        if (regenerateHandler) {
+                            const originalText = regenerateBtn.textContent;
+                            regenerateBtn.addEventListener('click', async () => {
+                                regenerateBtn.disabled = true;
+                                regenerateBtn.textContent = '재생성 중...';
+                                try {
+                                    const newMarkdown = await regenerateHandler();
+                                    if (typeof newMarkdown === 'string' && newMarkdown.trim()) {
+                                        currentMarkdown = newMarkdown;
+                                        if (summaryContent) {
+                                            summaryContent.innerHTML = renderMarkdown(currentMarkdown);
+                                        }
+                                        if (editArea && !editArea.classList.contains('hidden')) {
+                                            editArea.value = currentMarkdown;
+                                        }
+                                    } else {
+                                        alert('요약본 재생성에 실패했습니다. 다시 시도해주세요.');
+                                    }
+                                } catch (err) {
+                                    console.error('Regenerate failed:', err);
+                                    alert('요약본 재생성 중 오류가 발생했습니다.');
+                                } finally {
+                                    regenerateBtn.disabled = false;
+                                    regenerateBtn.textContent = originalText;
+                                }
+                            });
+                        } else {
+                            regenerateBtn.style.display = 'none';
+                        }
+                    }
+                })();
+            `;
+            summaryPopupWindow.document.open();
+            summaryPopupWindow.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>요약본</title><script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script><style>body{font-family:'Noto Sans KR',sans-serif;margin:0;padding:0;background:#f8fafc;color:#0f172a;} .summary-container{position:relative;max-width:960px;margin:0 auto;padding:48px 32px 32px;} .summary-actions{position:absolute;top:16px;right:16px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;} .summary-actions button{background:#1d4ed8;color:#ffffff;border:none;border-radius:24px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(29,78,216,0.25);transition:background 0.2s ease,transform 0.2s ease;} .summary-actions button:hover{background:#1e40af;transform:translateY(-1px);} .summary-actions button:active{transform:translateY(0);} .summary-content{background:#ffffff;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,0.08);padding:32px;line-height:1.7;} .manual-edit-area{width:100%;min-height:180px;margin-bottom:16px;padding:16px;border:1px solid #cbd5f5;border-radius:12px;font-size:15px;font-family:'Noto Sans KR',sans-serif;box-shadow:inset 0 1px 3px rgba(15,23,42,0.08);} .manual-edit-area:focus{outline:2px solid #2563eb;outline-offset:2px;} .hidden{display:none;} @media (max-width:600px){.summary-container{padding:40px 16px 24px;} .summary-content{padding:24px;} .summary-actions{top:12px;right:12px;} .summary-actions button{padding:8px 16px;font-size:13px;} .manual-edit-area{font-size:14px;}}</style></head><body><div class="summary-container"><div class="summary-actions"><button id="toggle-edit-btn">수동 편집</button><button id="regenerate-summary-btn">재생성</button><button id="copy-summary-btn">전문 복사</button></div><textarea id="manual-edit-area" class="manual-edit-area hidden" placeholder="요약본을 직접 수정하세요."></textarea><div id="summary-content" class="summary-content">${html}</div></div><script>${copyScript}<\/script></body></html>`);
+            summaryPopupWindow.document.close();
+            summaryPopupWindow.focus();
+        }
+
+        async function generatePlanSummary(options = {}) {
+            const { openPopup = true, showToastMessage = true } = options;
+            if (isSummaryGenerating) return null;
+            const sections = planContainer ? planContainer.querySelectorAll('.plan-section') : [];
+            if (!sections || !sections.length) return null;
+            isSummaryGenerating = true;
+            if (showToastMessage) {
+                showToast('요약본 생성 중입니다..');
+            }
+            const sectionData = Array.from(sections).map(sec => {
+                const title = sec.querySelector('h3').textContent;
+                const content = sec.dataset.markdownContent || sec.querySelector('.plan-section-content').innerText.trim();
+                return {
+                    title,
+                    content,
+                    isDetail: title.includes('세부 추진 계획')
+                };
+            });
+            let prompt = `다음은 학교 업무 계획서의 항목들이다.\n`;
+            prompt += `- 제목에 '세부 추진 계획'이 포함된 항목만 핵심이 드러나도록 요약해줘.\n`;
+            prompt += `- '세부 추진 계획' 항목은 다른 항목과 동일하게 '-'로 시작하는 불릿 포인트 형식으로 핵심을 나열해줘.\n`;
+            prompt += `- '세부 추진 계획' 항목의 각 불릿은 "항목: 설명" 형태의 한 문장으로 작성해.\n`;
+            prompt += `- 다른 모든 항목은 글자, 줄바꿈, 표 형식을 포함해 제공된 내용을 한 글자도 수정하지 말고 그대로 출력해줘.\n`;
+            prompt += `- 출력 순서와 형식은 입력과 동일하게 유지하고, 각 항목은 '## 제목' 헤더 아래에 작성해줘.\n`;
+            prompt += `- 표가 있는 경우 마크다운 표 형식을 반드시 유지해줘.\n`;
+            prompt += `아래에 각 항목의 원본이 [항목 시작]과 [항목 종료] 사이에 제공돼.\n`;
+            sectionData.forEach(({ title, content, isDetail }) => {
+                prompt += `\n[항목 시작]\n제목: ${title}\n처리 방식: ${isDetail ? '요약' : '원문 유지'}\n내용:\n${content}\n[항목 종료]\n`;
+            });
+            try {
+                const response = await fetch('/.netlify/functions/generatePlan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                    let summaryMarkdown = extractMarkdownFromText(text);
+                    summaryMarkdown = summaryMarkdown
+                        .split('\n')
+                        .filter(line => {
+                            const trimmed = line.trim();
+                            return !trimmed.startsWith('처리 방식: 요약 내용') && !trimmed.startsWith('처리 방식: 원문 유지 내용');
+                        })
+                        .join('\n')
+                        .trim();
+                    await saveCurrentSummary(summaryMarkdown);
+                    if (openPopup) {
+                        showSummaryPopup(summaryMarkdown);
+                    }
+                    return summaryMarkdown;
+                }
+            } catch (err) {
+                console.error('Summary Error:', err);
+            } finally {
+                isSummaryGenerating = false;
+            }
+            return null;
+        }
+
 async function saveCurrentPlan() {
             const user = auth.currentUser;
             if (!user || !currentPlanId) return;
@@ -2438,15 +2659,16 @@ async function saveCurrentPlan() {
                     });
                     const result = await response.json();
                     const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (text) {
-                        const markdown = extractMarkdownFromText(text);
-                        if (target === '전체') {
-                            displayContent(markdown, planTitle.textContent);
-                        } else {
-                            const section = Array.from(planContainer.querySelectorAll('.plan-section')).find(sec => sec.querySelector('h3').textContent.includes(target));
-                            if (section) {
-                                const lines = markdown.split('\n');
-                                if (lines[0].startsWith('##')) lines.shift();
+                        if (text) {
+                            const markdown = extractMarkdownFromText(text);
+                            if (target === '전체') {
+                                displayContent(markdown, planTitle.textContent);
+                                await saveCurrentSummary(null);
+                            } else {
+                                const section = Array.from(planContainer.querySelectorAll('.plan-section')).find(sec => sec.querySelector('h3').textContent.includes(target));
+                                if (section) {
+                                    const lines = markdown.split('\n');
+                                    if (lines[0].startsWith('##')) lines.shift();
                                 let newContent = lines.join('\n').trim();
                                 newContent = newContent
                                     .replace(/합니다\./gm, '한다.')
@@ -2802,149 +3024,21 @@ async function saveCurrentPlan() {
 
         if (mergePlanBtn) {
             mergePlanBtn.addEventListener('click', async () => {
-                const sections = planContainer.querySelectorAll('.plan-section');
-                const sectionData = Array.from(sections).map(sec => {
-                    const title = sec.querySelector('h3').textContent;
-                    const content = sec.dataset.markdownContent || sec.querySelector('.plan-section-content').innerText.trim();
-                    return {
-                        title,
-                        content,
-                        isDetail: title.includes('세부 추진 계획')
-                    };
-                });
-                let prompt = `다음은 학교 업무 계획서의 항목들이다.\n`;
-                prompt += `- 제목에 '세부 추진 계획'이 포함된 항목만 핵심이 드러나도록 요약해줘.\n`;
-                prompt += `- '세부 추진 계획' 항목은 다른 항목과 동일하게 '-'로 시작하는 불릿 포인트 형식으로 핵심을 나열해줘.\n`;
-                prompt += `- '세부 추진 계획' 항목의 각 불릿은 "항목: 설명" 형태의 한 문장으로 작성해줘.\n`;
-                prompt += `- 다른 모든 항목은 글자, 줄바꿈, 표 형식을 포함해 제공된 내용을 한 글자도 수정하지 말고 그대로 출력해줘.\n`;
-                prompt += `- 출력 순서와 형식은 입력과 동일하게 유지하고, 각 항목은 '## 제목' 헤더 아래에 작성해줘.\n`;
-                prompt += `- 표가 있는 경우 마크다운 표 형식을 반드시 유지해줘.\n`;
-                prompt += `아래에 각 항목의 원본이 [항목 시작]과 [항목 종료] 사이에 제공돼.\n`;
-                sectionData.forEach(({ title, content, isDetail }) => {
-                    prompt += `\n[항목 시작]\n제목: ${title}\n처리 방식: ${isDetail ? '요약' : '원문 유지'}\n내용:\n${content}\n[항목 종료]\n`;
-                });
-                try {
-                    showToast('요약본 생성 중입니다..');
-                    const response = await fetch('/.netlify/functions/generatePlan', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            prompt
-                        })
-                    });
-                    const result = await response.json();
-                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (text) {
-                        let summaryMarkdown = extractMarkdownFromText(text);
-                        summaryMarkdown = summaryMarkdown
-                            .split('\n')
-                            .filter(line => {
-                                const trimmed = line.trim();
-                                return !trimmed.startsWith('처리 방식: 요약 내용') && !trimmed.startsWith('처리 방식: 원문 유지 내용');
-                            })
-                            .join('\n')
-                            .trim();
-                        const html = parseMarkdown(summaryMarkdown);
-                        const popup = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
-                        if (popup) {
-                            const copyScript = `
-                                (function() {
-                                    let currentMarkdown = ${JSON.stringify(summaryMarkdown)};
-                                    const renderMarkdown = (markdown) => {
-                                        if (window.marked) {
-                                            return window.marked.parse(markdown);
-                                        }
-                                        return markdown
-                                            .split(/\n\n+/)
-                                            .map(block => block.replace(/\n/g, '<br>'))
-                                            .join('<br><br>');
-                                    };
-                                    const copy = async () => {
-                                        if (navigator.clipboard && window.isSecureContext) {
-                                            await navigator.clipboard.writeText(currentMarkdown);
-                                            return true;
-                                        }
-                                        const textarea = document.createElement('textarea');
-                                        textarea.value = currentMarkdown;
-                                        textarea.style.position = 'fixed';
-                                        textarea.style.left = '-9999px';
-                                        document.body.appendChild(textarea);
-                                        textarea.focus();
-                                        textarea.select();
-                                        let success = false;
-                                        try {
-                                            success = document.execCommand('copy');
-                                        } catch (err) {
-                                            success = false;
-                                        }
-                                        document.body.removeChild(textarea);
-                                        return success;
-                                    };
-                                    const copyBtn = document.getElementById('copy-summary-btn');
-                                    const toggleEditBtn = document.getElementById('toggle-edit-btn');
-                                    const editArea = document.getElementById('manual-edit-area');
-                                    const summaryContent = document.getElementById('summary-content');
-                                    const applyManualEdit = () => {
-                                        if (!editArea) return;
-                                        currentMarkdown = editArea.value;
-                                        if (summaryContent) {
-                                            summaryContent.innerHTML = renderMarkdown(currentMarkdown);
-                                        }
-                                    };
-                                    if (editArea) {
-                                        editArea.addEventListener('input', () => {
-                                            currentMarkdown = editArea.value;
-                                            if (summaryContent) {
-                                                summaryContent.innerHTML = renderMarkdown(currentMarkdown);
-                                            }
-                                        });
-                                    }
-                                    if (toggleEditBtn && editArea) {
-                                        let isEditing = false;
-                                        toggleEditBtn.addEventListener('click', () => {
-                                            isEditing = !isEditing;
-                                            if (isEditing) {
-                                                toggleEditBtn.textContent = '편집 완료';
-                                                editArea.value = currentMarkdown;
-                                                editArea.classList.remove('hidden');
-                                                editArea.focus();
-                                            } else {
-                                                toggleEditBtn.textContent = '수동 편집';
-                                                applyManualEdit();
-                                                editArea.classList.add('hidden');
-                                            }
-                                        });
-                                    }
-                                    if (copyBtn) {
-                                        copyBtn.addEventListener('click', async () => {
-                                            try {
-                                                applyManualEdit();
-                                                const copied = await copy();
-                                                if (copied) {
-                                                    copyBtn.textContent = '복사 완료';
-                                                    setTimeout(() => {
-                                                        copyBtn.textContent = '전문 복사';
-                                                    }, 1500);
-                                                } else {
-                                                    alert('복사에 실패했습니다. 다시 시도해주세요.');
-                                                }
-                                            } catch (err) {
-                                                console.error('Copy failed:', err);
-                                                alert('복사에 실패했습니다. 다시 시도해주세요.');
-                                            }
-                                        });
-                                    }
-                                })();
-                            `;
-                            popup.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>요약본</title><script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script><style>body{font-family:'Noto Sans KR',sans-serif;margin:0;padding:0;background:#f8fafc;color:#0f172a;} .summary-container{position:relative;max-width:960px;margin:0 auto;padding:48px 32px 32px;} .summary-actions{position:absolute;top:16px;right:16px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;} .summary-actions button{background:#1d4ed8;color:#ffffff;border:none;border-radius:24px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(29,78,216,0.25);transition:background 0.2s ease,transform 0.2s ease;} .summary-actions button:hover{background:#1e40af;transform:translateY(-1px);} .summary-actions button:active{transform:translateY(0);} .summary-content{background:#ffffff;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,0.08);padding:32px;line-height:1.7;} .manual-edit-area{width:100%;min-height:180px;margin-bottom:16px;padding:16px;border:1px solid #cbd5f5;border-radius:12px;font-size:15px;font-family:'Noto Sans KR',sans-serif;box-shadow:inset 0 1px 3px rgba(15,23,42,0.08);} .manual-edit-area:focus{outline:2px solid #2563eb;outline-offset:2px;} .hidden{display:none;} @media (max-width:600px){.summary-container{padding:40px 16px 24px;} .summary-content{padding:24px;} .summary-actions{top:12px;right:12px;} .summary-actions button{padding:8px 16px;font-size:13px;} .manual-edit-area{font-size:14px;}}</style></head><body><div class="summary-container"><div class="summary-actions"><button id="toggle-edit-btn">수동 편집</button><button id="copy-summary-btn">전문 복사</button></div><textarea id="manual-edit-area" class="manual-edit-area hidden" placeholder="요약본을 직접 수정하세요."></textarea><div id="summary-content" class="summary-content">${html}</div></div><script>${copyScript}<\/script></body></html>`);
-                            popup.document.close();
-                        }
-                    }
-                } catch (err) {
-                    console.error('Summary Error:', err);
+                if (currentPlanSummaryMarkdown && !isSummaryGenerating) {
+                    showSummaryPopup(currentPlanSummaryMarkdown);
+                    return;
+                }
+                const markdown = await generatePlanSummary({ openPopup: true, showToastMessage: true });
+                if (!markdown && !isSummaryGenerating) {
+                    showToast('요약본 생성에 실패했습니다.');
                 }
             });
         }
+
+        window.generatePlanSummaryFromPopup = async () => {
+            const markdown = await generatePlanSummary({ openPopup: false, showToastMessage: true });
+            return markdown;
+        };
 
         editTitleBtn.addEventListener('click', () => {
             const isEditing = editTitleBtn.textContent === '완료';
