@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   try {
     const { prompt, model: requestedModel } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
-    const DEFAULT_MODEL = 'gemini-1.5-flash-latest';
+    const DEFAULT_MODEL = 'gemini-2.0-flash-lite-001';
 
     if (process.env.GEMINI_MODEL && process.env.GEMINI_MODEL !== DEFAULT_MODEL) {
       console.warn(
