@@ -7,15 +7,28 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { prompt } = req.body;
+    const { prompt, model: requestedModel } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
+    const DEFAULT_MODEL = 'gemini-1.5-flash-latest';
+
+    if (process.env.GEMINI_MODEL && process.env.GEMINI_MODEL !== DEFAULT_MODEL) {
+      console.warn(
+        `Ignoring GEMINI_MODEL environment override (${process.env.GEMINI_MODEL}) in favour of ${DEFAULT_MODEL}.`
+      );
+    }
+
+    if (requestedModel && requestedModel !== DEFAULT_MODEL) {
+      console.warn(
+        `Ignoring client-specified model (${requestedModel}); using ${DEFAULT_MODEL} instead.`
+      );
+    }
 
     if (!prompt) {
       res.status(400).json({ error: 'Prompt is required.' });
       return;
     }
 
-    const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest';
+    const model = DEFAULT_MODEL;
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const response = await fetch(apiUrl, {
       method: 'POST',

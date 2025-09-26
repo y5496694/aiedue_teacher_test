@@ -10,8 +10,21 @@ exports.handler = async function (event, context) {
   }
 
   try {
-    const { prompt } = JSON.parse(event.body);
+    const { prompt, model: requestedModel } = JSON.parse(event.body);
     const apiKey = process.env.GEMINI_API_KEY; // Netlify에 저장된 API 키 사용
+    const DEFAULT_MODEL = "gemini-1.5-flash-latest";
+
+    if (process.env.GEMINI_MODEL && process.env.GEMINI_MODEL !== DEFAULT_MODEL) {
+      console.warn(
+        `Ignoring GEMINI_MODEL environment override (${process.env.GEMINI_MODEL}) in favour of ${DEFAULT_MODEL}.`
+      );
+    }
+
+    if (requestedModel && requestedModel !== DEFAULT_MODEL) {
+      console.warn(
+        `Ignoring client-specified model (${requestedModel}); using ${DEFAULT_MODEL} instead.`
+      );
+    }
 
     if (!prompt) {
       return {
@@ -20,7 +33,7 @@ exports.handler = async function (event, context) {
       };
     }
 
-    const model = process.env.GEMINI_MODEL || "gemini-1.5-flash-latest";
+    const model = DEFAULT_MODEL;
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     const response = await fetch(apiUrl, {
