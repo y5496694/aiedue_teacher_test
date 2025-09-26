@@ -1,20 +1,10 @@
 {
-  "name": "aiedu-plan-functions",
+  "name": "aiedu-plan-static",
   "version": "1.0.0",
-  "description": "Serverless functions for Aiedu Plan",
-  "main": "index.js",
+  "description": "Static resources for Aiedu Plan",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "echo 'Static project - no runtime server required.'"
   },
   "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "node-fetch": "^2.6.7",
-    "next": "^14.2.3",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  }
+  "license": "ISC"
 }

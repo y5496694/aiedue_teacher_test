@@ -167,6 +167,7 @@
                         </div>
                         <div class="bg-white p-6 rounded-lg shadow-lg">
                             <h3 class="text-xl font-bold mb-4">최근 생성한 계획서</h3>
+                            <input type="search" id="recent-plan-search" placeholder="제목 검색" class="w-full mb-3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                             <div id="recent-plans-list" class="space-y-3"></div>
                         </div>
                     </div>
@@ -174,19 +175,23 @@
                         <h3 class="text-2xl font-bold mb-4">최근 자료 모아보기</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                             <div class="bg-white p-6 rounded-lg shadow-lg">
-                                <h4 class="text-lg font-semibold mb-3">운영계획서</h4>
-                                <div id="home-plans-list" class="space-y-2 text-sm text-gray-700"></div>
-                            </div>
-                            <div class="bg-white p-6 rounded-lg shadow-lg">
                                 <h4 class="text-lg font-semibold mb-3">표</h4>
+                                <input type="search" id="home-tables-search" placeholder="제목 검색" class="w-full mb-3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                                 <div id="home-tables-list" class="space-y-2 text-sm text-gray-700"></div>
                             </div>
                             <div class="bg-white p-6 rounded-lg shadow-lg">
+                                <h4 class="text-lg font-semibold mb-3">기안문</h4>
+                                <input type="search" id="home-officials-search" placeholder="제목 검색" class="w-full mb-3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                                <div id="home-officials-list" class="space-y-2 text-sm text-gray-700"></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg">
                                 <h4 class="text-lg font-semibold mb-3">가정통신문</h4>
+                                <input type="search" id="home-letters-search" placeholder="제목 검색" class="w-full mb-3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                                 <div id="home-letters-list" class="space-y-2 text-sm text-gray-700"></div>
                             </div>
                             <div class="bg-white p-6 rounded-lg shadow-lg">
                                 <h4 class="text-lg font-semibold mb-3">커뮤니티</h4>
+                                <input type="search" id="home-community-search" placeholder="제목 검색" class="w-full mb-3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                                 <div id="home-community-list" class="space-y-2 text-sm text-gray-700"></div>
                             </div>
                         </div>
@@ -503,7 +508,7 @@
         <div id="community-post-modal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
             <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-semibold">새 글 작성</h3>
+                    <h3 id="community-modal-title" class="text-xl font-semibold">새 글 작성</h3>
                     <button id="close-community-modal" class="text-gray-500 hover:text-gray-700">✕</button>
                 </div>
                 <form id="community-post-form" class="space-y-4">
@@ -517,7 +522,7 @@
                     </div>
                     <div class="flex justify-end gap-2">
                         <button type="button" id="cancel-community-post" class="px-4 py-2 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100">취소</button>
-                        <button type="submit" class="px-4 py-2 rounded-md bg-[#7A9D54] text-white hover:bg-[#6a8a4a]">등록</button>
+                        <button type="submit" id="community-post-submit" class="px-4 py-2 rounded-md bg-[#7A9D54] text-white hover:bg-[#6a8a4a]">등록</button>
                     </div>
                 </form>
             </div>
@@ -583,17 +588,24 @@
         const communityPostForm = document.getElementById('community-post-form');
         const communityPostTitleInput = document.getElementById('community-post-title');
         const communityPostContentInput = document.getElementById('community-post-content');
+        const communityModalTitle = document.getElementById('community-modal-title');
+        const communityPostSubmitBtn = document.getElementById('community-post-submit');
         const closeCommunityModalBtn = document.getElementById('close-community-modal');
         const cancelCommunityPostBtn = document.getElementById('cancel-community-post');
-        const homePlansList = document.getElementById('home-plans-list');
         const homeTablesList = document.getElementById('home-tables-list');
+        const homeTablesSearchInput = document.getElementById('home-tables-search');
+        const homeOfficialsList = document.getElementById('home-officials-list');
+        const homeOfficialsSearchInput = document.getElementById('home-officials-search');
         const homeLettersList = document.getElementById('home-letters-list');
+        const homeLettersSearchInput = document.getElementById('home-letters-search');
         const homeCommunityList = document.getElementById('home-community-list');
+        const homeCommunitySearchInput = document.getElementById('home-community-search');
         const planSearchInput = document.getElementById('plan-search');
         const tableSearchInput = document.getElementById('table-search');
         const officialSearchInput = document.getElementById('official-search');
         const letterSearchInput = document.getElementById('letter-search');
         const recentPlansList = document.getElementById('recent-plans-list');
+        const recentPlanSearchInput = document.getElementById('recent-plan-search');
         const form = document.getElementById('plan-form');
         const GEMINI_MODEL = 'gemini-2.0-flash-lite-001';
 
@@ -825,38 +837,73 @@
             return date.toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
         };
 
-        const updateHomeListSection = (container, items, emptyText) => {
-            if (!container) return;
+        const homeListData = {
+            tables: [],
+            officials: [],
+            letters: [],
+            community: []
+        };
+
+        const homeListConfigs = {
+            tables: { container: homeTablesList, searchInput: homeTablesSearchInput, emptyText: '생성된 표가 없습니다.', view: (id) => viewTable(id) },
+            officials: { container: homeOfficialsList, searchInput: homeOfficialsSearchInput, emptyText: '생성된 기안문이 없습니다.', view: (id) => viewOfficial(id) },
+            letters: { container: homeLettersList, searchInput: homeLettersSearchInput, emptyText: '생성된 가정통신문이 없습니다.', view: (id) => viewLetter(id) },
+            community: { container: homeCommunityList, searchInput: homeCommunitySearchInput, emptyText: '작성된 커뮤니티 글이 없습니다.', view: (id) => openCommunityPost(id) }
+        };
+
+        const renderHomeList = (type) => {
+            const config = homeListConfigs[type];
+            if (!config || !config.container) return;
+            const { container, searchInput, emptyText, view } = config;
+            const items = homeListData[type] || [];
             container.innerHTML = '';
-            if (!items || items.length === 0) {
+            if (!items.length) {
                 container.innerHTML = `<p class="text-sm text-gray-400">${emptyText}</p>`;
                 return;
             }
-            items.slice(0, 4).forEach(item => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'py-2 border-b border-gray-100 last:border-b-0';
+            const searchTerm = (searchInput?.value || '').trim().toLowerCase();
+            const filteredItems = searchTerm
+                ? items.filter(item => (item.title || '').toLowerCase().includes(searchTerm))
+                : items;
+            if (!filteredItems.length) {
+                container.innerHTML = '<p class="text-sm text-gray-400">검색 결과가 없습니다.</p>';
+                return;
+            }
+            const displayItems = searchTerm ? filteredItems : filteredItems.slice(0, 4);
+            displayItems.forEach(item => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'w-full text-left py-2 border-b border-gray-100 last:border-b-0 focus:outline-none focus:ring-2 focus:ring-[#7A9D54]';
                 const title = document.createElement('p');
                 title.className = 'text-sm font-medium text-gray-800 truncate';
                 title.textContent = item.title || '제목 없음';
                 const date = document.createElement('p');
                 date.className = 'text-xs text-gray-500 mt-1';
                 date.textContent = formatDateTime(item.createdAt, false);
-                wrapper.appendChild(title);
-                wrapper.appendChild(date);
-                container.appendChild(wrapper);
+                button.appendChild(title);
+                button.appendChild(date);
+                button.addEventListener('click', () => {
+                    if (typeof view === 'function' && item.id) {
+                        view(item.id);
+                    }
+                });
+                container.appendChild(button);
             });
         };
 
-        const updateHomePlansSection = (plans) => updateHomeListSection(homePlansList, plans, '생성된 계획서가 없습니다.');
-        const updateHomeTablesSection = (tables) => updateHomeListSection(homeTablesList, tables, '생성된 표가 없습니다.');
-        const updateHomeLettersSection = (letters) => updateHomeListSection(homeLettersList, letters, '생성된 가정통신문이 없습니다.');
-        const updateHomeCommunitySection = (posts) => updateHomeListSection(homeCommunityList, posts, '작성된 커뮤니티 글이 없습니다.');
+        const setHomeListData = (type, items = []) => {
+            if (!(type in homeListData)) return;
+            homeListData[type] = items;
+            renderHomeList(type);
+        };
 
         const openModal = (modal) => { if (modal) modal.classList.remove('hidden'); };
         const closeModal = (modal) => { if (modal) modal.classList.add('hidden'); };
 
         let communityPostsCache = [];
         let activePostMenu = null;
+        let isEditingCommunityPost = false;
+        let editingCommunityPostId = null;
 
         const closeActivePostMenu = () => {
             if (activePostMenu) {
@@ -865,11 +912,28 @@
             }
         };
 
+        if (homeTablesSearchInput) {
+            homeTablesSearchInput.addEventListener('input', () => renderHomeList('tables'));
+        }
+        if (homeOfficialsSearchInput) {
+            homeOfficialsSearchInput.addEventListener('input', () => renderHomeList('officials'));
+        }
+        if (homeLettersSearchInput) {
+            homeLettersSearchInput.addEventListener('input', () => renderHomeList('letters'));
+        }
+        if (homeCommunitySearchInput) {
+            homeCommunitySearchInput.addEventListener('input', () => renderHomeList('community'));
+        }
+
         const attachModalDismiss = (modal) => {
             if (!modal) return;
             modal.addEventListener('click', (event) => {
                 if (event.target === modal) {
-                    closeModal(modal);
+                    if (modal === communityPostModal) {
+                        closeCommunityModal();
+                    } else {
+                        closeModal(modal);
+                    }
                 }
             });
         };
@@ -983,6 +1047,9 @@
         if (planSearchInput) {
             planSearchInput.addEventListener('input', () => loadAndDisplayPlans());
         }
+        if (recentPlanSearchInput) {
+            recentPlanSearchInput.addEventListener('input', () => loadAndDisplayPlans());
+        }
         if (tableSearchInput) {
             tableSearchInput.addEventListener('input', () => loadAndDisplayItems('tables', tableSavedList, viewTable));
         }
@@ -1030,11 +1097,22 @@
             });
         }
 
-        const closeCommunityModal = () => closeModal(communityPostModal);
+        const resetCommunityModalState = () => {
+            isEditingCommunityPost = false;
+            editingCommunityPostId = null;
+            if (communityModalTitle) communityModalTitle.textContent = '새 글 작성';
+            if (communityPostSubmitBtn) communityPostSubmitBtn.textContent = '등록';
+        };
+
+        const closeCommunityModal = () => {
+            if (communityPostForm) communityPostForm.reset();
+            resetCommunityModalState();
+            closeModal(communityPostModal);
+        };
         if (openCreatePostBtn) {
             openCreatePostBtn.addEventListener('click', () => {
-                communityPostTitleInput.value = '';
-                communityPostContentInput.value = '';
+                resetCommunityModalState();
+                if (communityPostForm) communityPostForm.reset();
                 openModal(communityPostModal);
             });
         }
@@ -1059,19 +1137,27 @@
                 const content = communityPostContentInput.value.trim();
                 if (!title || !content) return;
                 try {
-                    await addDoc(collection(db, 'communityPosts'), {
-                        title,
-                        content,
-                        authorId: user.uid,
-                        authorName: user.displayName || user.email,
-                        createdAt: serverTimestamp()
-                    });
+                    if (isEditingCommunityPost && editingCommunityPostId) {
+                        await updateDoc(doc(db, 'communityPosts', editingCommunityPostId), {
+                            title,
+                            content,
+                            updatedAt: serverTimestamp()
+                        });
+                        showToast('글이 수정되었습니다.');
+                    } else {
+                        await addDoc(collection(db, 'communityPosts'), {
+                            title,
+                            content,
+                            authorId: user.uid,
+                            authorName: user.displayName || user.email,
+                            createdAt: serverTimestamp()
+                        });
+                        showToast('글이 등록되었습니다.');
+                    }
                     closeCommunityModal();
-                    communityPostForm.reset();
-                    showToast('글이 등록되었습니다.');
                     loadCommunityPosts();
                 } catch (error) {
-                    console.error('Error creating community post:', error);
+                    console.error('Error saving community post:', error);
                 }
             });
         }
@@ -1175,6 +1261,7 @@
             for (const post of posts) {
                 const card = document.createElement('div');
                 card.className = 'bg-white p-6 rounded-lg shadow-md';
+                card.id = `community-post-${post.id}`;
 
                 const header = document.createElement('div');
                 header.className = 'flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3';
@@ -1206,15 +1293,20 @@
                     const menu = document.createElement('div');
                     menu.className = 'hidden absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-md shadow-lg z-20 text-sm text-left';
                     menu.addEventListener('click', (e) => e.stopPropagation());
-                    const editBtn = document.createElement('button');
-                    editBtn.type = 'button';
-                    editBtn.className = 'block w-full px-4 py-2 hover:bg-gray-100 text-left';
-                    editBtn.textContent = '제목 편집';
+                    const editContentBtn = document.createElement('button');
+                    editContentBtn.type = 'button';
+                    editContentBtn.className = 'block w-full px-4 py-2 hover:bg-gray-100 text-left';
+                    editContentBtn.textContent = '글 수정';
+                    const editTitleBtn = document.createElement('button');
+                    editTitleBtn.type = 'button';
+                    editTitleBtn.className = 'block w-full px-4 py-2 hover:bg-gray-100 text-left';
+                    editTitleBtn.textContent = '제목 수정';
                     const deleteBtn = document.createElement('button');
                     deleteBtn.type = 'button';
                     deleteBtn.className = 'block w-full px-4 py-2 hover:bg-gray-100 text-left text-red-600';
                     deleteBtn.textContent = '삭제';
-                    menu.appendChild(editBtn);
+                    menu.appendChild(editContentBtn);
+                    menu.appendChild(editTitleBtn);
                     menu.appendChild(deleteBtn);
                     menuWrapper.appendChild(menuBtn);
                     menuWrapper.appendChild(menu);
@@ -1230,7 +1322,7 @@
                         activePostMenu = willOpen ? menu : null;
                     });
 
-                    editBtn.addEventListener('click', async () => {
+                    editTitleBtn.addEventListener('click', async () => {
                         closeActivePostMenu();
                         const newTitle = prompt('새 제목을 입력하세요', post.title || '');
                         if (!newTitle || !newTitle.trim()) return;
@@ -1244,6 +1336,17 @@
                         } catch (error) {
                             console.error('Error updating post title:', error);
                         }
+                    });
+
+                    editContentBtn.addEventListener('click', () => {
+                        closeActivePostMenu();
+                        isEditingCommunityPost = true;
+                        editingCommunityPostId = post.id;
+                        if (communityModalTitle) communityModalTitle.textContent = '글 수정';
+                        if (communityPostSubmitBtn) communityPostSubmitBtn.textContent = '수정 완료';
+                        communityPostTitleInput.value = post.title || '';
+                        communityPostContentInput.value = post.content || '';
+                        openModal(communityPostModal);
                     });
 
                     deleteBtn.addEventListener('click', async () => {
@@ -1321,6 +1424,27 @@
             }
         };
 
+        const highlightCommunityPost = (postId) => {
+            const target = document.getElementById(`community-post-${postId}`);
+            if (!target) return false;
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            target.classList.add('border-2', 'border-green-500');
+            setTimeout(() => {
+                target.classList.remove('border-2', 'border-green-500');
+            }, 2000);
+            return true;
+        };
+
+        function openCommunityPost(postId) {
+            if (!postId) return;
+            switchView('community');
+            setTimeout(() => {
+                if (!highlightCommunityPost(postId)) {
+                    loadCommunityPosts().then(() => highlightCommunityPost(postId));
+                }
+            }, 200);
+        }
+
         const loadCommunityPosts = async (options = {}) => {
             const { skipRender = false } = options;
             try {
@@ -1330,7 +1454,7 @@
                 snap.forEach(docSnap => posts.push({ id: docSnap.id, ...docSnap.data() }));
                 posts.sort((a, b) => (b.createdAt?.toMillis?.() || b.createdAt?.seconds || 0) - (a.createdAt?.toMillis?.() || a.createdAt?.seconds || 0));
                 communityPostsCache = posts;
-                updateHomeCommunitySection(posts);
+                setHomeListData('community', posts);
                 if (skipRender) return;
                 const searchTerm = (communitySearchInput?.value || '').trim().toLowerCase();
                 let displayPosts = posts;
@@ -1363,12 +1487,14 @@
             const user = auth.currentUser;
             if (!user) return;
             try {
-                const [tables, letters] = await Promise.all([
+                const [tables, officials, letters] = await Promise.all([
                     fetchUserCollectionItems('tables'),
+                    fetchUserCollectionItems('officials'),
                     fetchUserCollectionItems('letters')
                 ]);
-                updateHomeTablesSection(tables);
-                updateHomeLettersSection(letters);
+                setHomeListData('tables', tables);
+                setHomeListData('officials', officials);
+                setHomeListData('letters', letters);
             } catch (error) {
                 console.error('Home summary load error:', error);
             }
@@ -2016,6 +2142,20 @@
         }
 
         // --- FIRESTORE & DATA HANDLING ---
+        async function openPlan(planId) {
+            const user = auth.currentUser;
+            if (!user || !planId) return;
+            const docRef = doc(db, "users", user.uid, "plans", planId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const planToView = docSnap.data();
+                switchView('plan');
+                displayContent(planToView.rawContent, planToView.title, planToView.summaryContent || null);
+                currentPlanId = planId;
+                outputPanel.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
         const loadAndDisplayPlans = async () => {
             const user = auth.currentUser;
             if (!user) return;
@@ -2031,114 +2171,114 @@
                 });
 
                 plans.sort((a, b) => (b.createdAt?.toMillis?.() || b.createdAt?.seconds || 0) - (a.createdAt?.toMillis?.() || a.createdAt?.seconds || 0));
-                updateHomePlansSection(plans);
-
                 const populateList = (container, planList) => {
+                    if (!container) return;
                     container.innerHTML = '';
-                    if (planList.length === 0) {
+                    if (!planList || planList.length === 0) {
                         container.innerHTML = `<p class="text-gray-500 text-center py-4">아직 생성된 계획서가 없습니다.</p>`;
                         return;
                     }
                     planList.forEach((plan) => {
                         const planElement = document.createElement('div');
-                        planElement.className = 'p-4 border rounded-md hover:bg-gray-50 transition-colors flex justify-between items-center';
-                        planElement.innerHTML = `
-                            <div>
-                                <p class="font-semibold">${plan.title}</p>
-                                <p class="text-sm text-gray-500">생성일: ${plan.createdAt ? new Date(plan.createdAt.toDate()).toLocaleDateString() : '날짜 없음'}</p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button class="rename-plan-btn text-sm font-medium text-green-600 hover:underline" data-id="${plan.id}">수정</button>
-                                <button class="copy-plan-btn text-sm font-medium text-purple-600 hover:underline" data-id="${plan.id}">복사</button>
-                                <button class="view-plan-btn text-sm font-medium text-blue-600 hover:underline" data-id="${plan.id}">보기</button>
-                                <button class="delete-plan-btn text-sm font-medium text-red-600 hover:underline" data-id="${plan.id}">삭제</button>
-                            </div>
-                        `;
-                    container.appendChild(planElement);
-                });
-            };
+                        planElement.className = 'p-4 border rounded-md hover:bg-gray-50 transition-colors flex justify-between items-center cursor-pointer';
 
-                const searchTerm = (planSearchInput?.value || '').trim().toLowerCase();
-                const filteredPlans = searchTerm
-                    ? plans
-                        .filter(plan => (plan.title || '').toLowerCase().includes(searchTerm))
-                        .sort((a, b) => (a.createdAt?.toMillis?.() || a.createdAt?.seconds || 0) - (b.createdAt?.toMillis?.() || b.createdAt?.seconds || 0))
-                    : plans;
+                        const infoWrapper = document.createElement('div');
+                        const titleEl = document.createElement('p');
+                        titleEl.className = 'font-semibold';
+                        titleEl.textContent = plan.title || '제목 없음';
+                        const dateEl = document.createElement('p');
+                        dateEl.className = 'text-sm text-gray-500';
+                        dateEl.textContent = `생성일: ${formatDateTime(plan.createdAt, false)}`;
+                        infoWrapper.appendChild(titleEl);
+                        infoWrapper.appendChild(dateEl);
 
-                populateList(recentPlansList, plans.slice(0, 5));
+                        const actionsWrapper = document.createElement('div');
+                        actionsWrapper.className = 'flex items-center gap-2';
+
+                        const renameBtn = document.createElement('button');
+                        renameBtn.className = 'rename-plan-btn text-sm font-medium text-green-600 hover:underline';
+                        renameBtn.textContent = '수정';
+                        renameBtn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            const user = auth.currentUser;
+                            if (!user) return;
+                            const targetPlan = plans.find(p => p.id === plan.id);
+                            const newName = prompt('새 이름을 입력하세요', targetPlan?.title || '');
+                            if (newName && newName.trim()) {
+                                await updateDoc(doc(db, "users", user.uid, "plans", plan.id), { title: newName.trim() });
+                                loadAndDisplayPlans();
+                            }
+                        });
+
+                        const copyBtn = document.createElement('button');
+                        copyBtn.className = 'copy-plan-btn text-sm font-medium text-purple-600 hover:underline';
+                        copyBtn.textContent = '복사';
+                        copyBtn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            const user = auth.currentUser;
+                            if (!user) return;
+                            const planData = plans.find(p => p.id === plan.id);
+                            if (!planData) return;
+                            const baseTitle = (planData.title || '계획서').replace(/\(복사본\d+\)$/,'');
+                            let maxCopy = 0;
+                            plans.forEach(p => {
+                                const match = (p.title || '').match(new RegExp(`^${baseTitle}\\(복사본(\\d+)\\)$`));
+                                if (match) maxCopy = Math.max(maxCopy, parseInt(match[1]));
+                            });
+                            const newTitle = `${baseTitle}(복사본${maxCopy + 1})`;
+                            const { id: _id, createdAt: _createdAt, ...rest } = planData;
+                            await addDoc(collection(db, "users", user.uid, "plans"), {
+                                ...rest,
+                                title: newTitle,
+                                createdAt: serverTimestamp(),
+                            });
+                            loadAndDisplayPlans();
+                        });
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'delete-plan-btn text-sm font-medium text-red-600 hover:underline';
+                        deleteBtn.textContent = '삭제';
+                        deleteBtn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            const user = auth.currentUser;
+                            if (!user) return;
+                            try {
+                                deleteBtn.disabled = true;
+                                await deleteDoc(doc(db, "users", user.uid, "plans", plan.id));
+                                loadAndDisplayPlans();
+                            } catch (error) {
+                                console.error("Error deleting plan:", error);
+                            }
+                        });
+
+                        actionsWrapper.appendChild(renameBtn);
+                        actionsWrapper.appendChild(copyBtn);
+                        actionsWrapper.appendChild(deleteBtn);
+
+                        planElement.appendChild(infoWrapper);
+                        planElement.appendChild(actionsWrapper);
+                        planElement.addEventListener('click', () => openPlan(plan.id));
+
+                        container.appendChild(planElement);
+                    });
+                };
+
+                const filterPlansByTerm = (term) => {
+                    const normalized = (term || '').trim().toLowerCase();
+                    if (!normalized) return plans;
+                    return plans.filter(plan => (plan.title || '').toLowerCase().includes(normalized));
+                };
+
+                const recentTerm = recentPlanSearchInput?.value || '';
+                const planTerm = planSearchInput?.value || '';
+                const filteredPlans = filterPlansByTerm(planTerm);
+                const recentPlans = filterPlansByTerm(recentTerm);
+                const recentDisplayPlans = recentTerm.trim() ? recentPlans : plans.slice(0, 5);
+
+                populateList(recentPlansList, recentDisplayPlans);
                 if (planSavedList) {
                     populateList(planSavedList, filteredPlans);
                 }
-
-                document.querySelectorAll('.view-plan-btn').forEach(button => {
-                    button.addEventListener('click', async (e) => {
-                        const user = auth.currentUser;
-                        if (!user) return;
-                        const planId = e.target.dataset.id;
-                        const docRef = doc(db, "users", user.uid, "plans", planId);
-                        const docSnap = await getDoc(docRef);
-                        if (docSnap.exists()) {
-                            const planToView = docSnap.data();
-                            switchView('plan');
-                            displayContent(planToView.rawContent, planToView.title, planToView.summaryContent || null);
-                            currentPlanId = planId;
-                            outputPanel.scrollIntoView({ behavior: 'smooth' });
-                        }
-                    });
-                });
-                
-                document.querySelectorAll('.delete-plan-btn').forEach(button => {
-                    button.addEventListener('click', async (e) => {
-                        const user = auth.currentUser;
-                        if (!user) return;
-                        try {
-                            const buttonEl = e.currentTarget;
-                            buttonEl.disabled = true;
-                            await deleteDoc(doc(db, "users", user.uid, "plans", buttonEl.dataset.id));
-                            loadAndDisplayPlans();
-                        } catch (error) {
-                            console.error("Error deleting plan:", error);
-                        }
-                    });
-                });
-
-                document.querySelectorAll('.rename-plan-btn').forEach(button => {
-                    button.addEventListener('click', async (e) => {
-                        const user = auth.currentUser;
-                        if (!user) return;
-                        const planId = e.target.dataset.id;
-                        const targetPlan = plans.find(p => p.id === planId);
-                        const newName = prompt('새 이름을 입력하세요', targetPlan?.title || '');
-                        if (newName && newName.trim()) {
-                            await updateDoc(doc(db, "users", user.uid, "plans", planId), { title: newName.trim() });
-                            loadAndDisplayPlans();
-                        }
-                    });
-                });
-
-                document.querySelectorAll('.copy-plan-btn').forEach(button => {
-                    button.addEventListener('click', async (e) => {
-                        const user = auth.currentUser;
-                        if (!user) return;
-                        const planId = e.target.dataset.id;
-                        const plan = plans.find(p => p.id === planId);
-                        if (!plan) return;
-                        const baseTitle = plan.title.replace(/\(복사본\d+\)$/,'');
-                        let maxCopy = 0;
-                        plans.forEach(p => {
-                            const match = p.title.match(new RegExp(`^${baseTitle}\\(복사본(\\d+)\\)$`));
-                            if (match) maxCopy = Math.max(maxCopy, parseInt(match[1]));
-                        });
-                        const newTitle = `${baseTitle}(복사본${maxCopy + 1})`;
-                        const { id: _id, createdAt: _createdAt, ...rest } = plan;
-                        await addDoc(collection(db, "users", user.uid, "plans"), {
-                            ...rest,
-                            title: newTitle,
-                            createdAt: serverTimestamp(),
-                        });
-                        loadAndDisplayPlans();
-                    });
-                });
             } catch (error) {
                 console.error("Error loading plans:", error);
                 recentPlansList.innerHTML = `<p class="text-red-500 text-center py-4">계획서를 불러오는 중 오류가 발생했습니다.</p>`;
@@ -2157,8 +2297,9 @@
                 snap.forEach((doc) => items.push({ id: doc.id, ...doc.data() }));
                 items.sort((a, b) => (b.createdAt?.toMillis?.() || b.createdAt?.seconds || 0) - (a.createdAt?.toMillis?.() || a.createdAt?.seconds || 0));
 
-                if (type === 'tables') updateHomeTablesSection(items);
-                if (type === 'letters') updateHomeLettersSection(items);
+                if (type === 'tables') setHomeListData('tables', items);
+                if (type === 'officials') setHomeListData('officials', items);
+                if (type === 'letters') setHomeListData('letters', items);
 
                 container.innerHTML = '';
                 if (items.length === 0) {
@@ -2181,35 +2322,27 @@
 
                 displayItems.forEach(item => {
                     const el = document.createElement('div');
-                    el.className = 'p-4 border rounded-md hover:bg-gray-50 transition-colors flex justify-between items-center';
-                    el.innerHTML = `
-                        <div>
-                            <p class="font-semibold">${item.title}</p>
-                            <p class="text-sm text-gray-500">생성일: ${item.createdAt ? formatDateTime(item.createdAt, false) : '날짜 없음'}</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button class="rename-item-btn text-sm font-medium text-green-600 hover:underline" data-id="${item.id}">수정</button>
-                            <button class="copy-item-btn text-sm font-medium text-purple-600 hover:underline" data-id="${item.id}">복사</button>
-                            <button class="view-item-btn text-sm font-medium text-blue-600 hover:underline" data-id="${item.id}">보기</button>
-                            <button class="delete-item-btn text-sm font-medium text-red-600 hover:underline" data-id="${item.id}">삭제</button>
-                        </div>`;
-                    container.appendChild(el);
-                });
-                container.querySelectorAll('.view-item-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => viewHandler(e.target.dataset.id));
-                });
-                container.querySelectorAll('.delete-item-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
-                        const id = e.target.dataset.id;
-                        const user = auth.currentUser;
-                        if (!user) return;
-                        await deleteDoc(doc(db, "users", user.uid, type, id));
-                        loadAndDisplayItems(type, container, viewHandler);
-                    });
-                });
-                container.querySelectorAll('.rename-item-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
-                        const id = e.target.dataset.id;
+                    el.className = 'p-4 border rounded-md hover:bg-gray-50 transition-colors flex justify-between items-center cursor-pointer';
+
+                    const info = document.createElement('div');
+                    const titleEl = document.createElement('p');
+                    titleEl.className = 'font-semibold';
+                    titleEl.textContent = item.title || '제목 없음';
+                    const dateEl = document.createElement('p');
+                    dateEl.className = 'text-sm text-gray-500';
+                    dateEl.textContent = `생성일: ${item.createdAt ? formatDateTime(item.createdAt, false) : '날짜 없음'}`;
+                    info.appendChild(titleEl);
+                    info.appendChild(dateEl);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'flex items-center gap-2';
+
+                    const renameBtn = document.createElement('button');
+                    renameBtn.className = 'text-sm font-medium text-green-600 hover:underline';
+                    renameBtn.textContent = '수정';
+                    renameBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const id = item.id;
                         const user = auth.currentUser;
                         if (!user) return;
                         const target = items.find(i => i.id === id);
@@ -2219,21 +2352,24 @@
                             loadAndDisplayItems(type, container, viewHandler);
                         }
                     });
-                });
-                container.querySelectorAll('.copy-item-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
-                        const id = e.target.dataset.id;
+
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = 'text-sm font-medium text-purple-600 hover:underline';
+                    copyBtn.textContent = '복사';
+                    copyBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const id = item.id;
                         const user = auth.currentUser;
                         if (!user) return;
                         const target = items.find(i => i.id === id);
                         if (!target) return;
-                        const baseTitle = target.title.replace(/\(복사본\d+\)$/,'');
+                        const baseTitle = (target.title || '').replace(/\(복사본\d+\)$/,'');
                         let maxCopy = 0;
                         items.forEach(i => {
-                            const match = i.title.match(new RegExp(`^${baseTitle}\\(복사본(\\d+)\\)$`));
+                            const match = (i.title || '').match(new RegExp(`^${baseTitle}\\(복사본(\\d+)\\)$`));
                             if (match) maxCopy = Math.max(maxCopy, parseInt(match[1]));
                         });
-                        const newTitle = `${baseTitle}(복사본${maxCopy + 1})`;
+                        const newTitle = `${baseTitle || '항목'}(복사본${maxCopy + 1})`;
                         const { id: _id, createdAt: _createdAt, ...rest } = target;
                         await addDoc(collection(db, "users", user.uid, type), {
                             ...rest,
@@ -2242,6 +2378,28 @@
                         });
                         loadAndDisplayItems(type, container, viewHandler);
                     });
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'text-sm font-medium text-red-600 hover:underline';
+                    deleteBtn.textContent = '삭제';
+                    deleteBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const id = item.id;
+                        const user = auth.currentUser;
+                        if (!user) return;
+                        await deleteDoc(doc(db, "users", user.uid, type, id));
+                        loadAndDisplayItems(type, container, viewHandler);
+                    });
+
+                    actions.appendChild(renameBtn);
+                    actions.appendChild(copyBtn);
+                    actions.appendChild(deleteBtn);
+
+                    el.appendChild(info);
+                    el.appendChild(actions);
+                    el.addEventListener('click', () => viewHandler(item.id));
+
+                    container.appendChild(el);
                 });
             } catch (err) {
                 console.error(`Error loading ${type}:`, err);
@@ -2249,7 +2407,7 @@
             }
         };
 
-        const viewTable = async (id) => {
+        async function viewTable(id) {
             const user = auth.currentUser;
             if (!user) return;
             const docRef = doc(db, "users", user.uid, "tables", id);
@@ -2263,9 +2421,9 @@
                 tableOutputSection.classList.remove('hidden');
                 tableModifySection.classList.remove('hidden');
             }
-        };
+        }
 
-        const viewOfficial = async (id) => {
+        async function viewOfficial(id) {
             const user = auth.currentUser;
             if (!user) return;
             const docRef = doc(db, "users", user.uid, "officials", id);
@@ -2281,9 +2439,9 @@
                 officialOutputSection.classList.remove('hidden');
                 officialModifySection.classList.remove('hidden');
             }
-        };
+        }
 
-        const viewLetter = async (id) => {
+        async function viewLetter(id) {
             const user = auth.currentUser;
             if (!user) return;
             const docRef = doc(db, "users", user.uid, "letters", id);
@@ -2297,7 +2455,7 @@
                 letterOutputSection.classList.remove('hidden');
                 letterModifySection.classList.remove('hidden');
             }
-        };
+        }
 
         // --- GENERATOR LOGIC ---
         
