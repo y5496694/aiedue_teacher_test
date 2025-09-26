@@ -20,7 +20,8 @@ exports.handler = async function (event, context) {
       };
     }
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+    const model = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -32,8 +33,11 @@ exports.handler = async function (event, context) {
       const errorBody = await response.json();
       console.error("Gemini API Error:", errorBody);
       return {
-        statusCode: response.status,
-        body: JSON.stringify(errorBody),
+        statusCode: 502,
+        body: JSON.stringify({
+          error: "Gemini API request failed.",
+          details: errorBody,
+        }),
       };
     }
 
