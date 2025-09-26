@@ -12,7 +12,7 @@ exports.handler = async function (event, context) {
   try {
     const { prompt, model: requestedModel } = JSON.parse(event.body);
     const apiKey = process.env.GEMINI_API_KEY; // Netlify에 저장된 API 키 사용
-    const DEFAULT_MODEL = "gemini-1.5-flash-latest";
+    const DEFAULT_MODEL = "gemini-2.0-flash-lite-001";
 
     if (process.env.GEMINI_MODEL && process.env.GEMINI_MODEL !== DEFAULT_MODEL) {
       console.warn(
