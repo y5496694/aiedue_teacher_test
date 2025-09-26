@@ -1,0 +1,305 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 교사 역할 확인
+    function isTeacher() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    }
+
+    // 학생 역할 확인
+    function isStudent() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'student';
+    }
+
+    // 행동 기록이 공유되었는지 확인
+    function isBehaviorSharedWithRequestor(userId, behaviorId) {
+      let behaviorDoc = get(/databases/$(database)/documents/users/$(userId)/behaviors/$(behaviorId));
+      return behaviorDoc.data.sharedWith != null &&
+             request.auth.uid in behaviorDoc.data.sharedWith;
+    }
+
+    // 특정 행동 기록에 접근 가능한지 확인 (소유자 또는 공유 받은 교사)
+    function canAccessBehavior(userId, behaviorId) {
+      return isTeacher() && (
+        request.auth.uid == userId ||
+        isBehaviorSharedWithRequestor(userId, behaviorId)
+      );
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 사용자 정보 및 하위 데이터
+    // ──────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      allow get: if request.auth.uid == userId || isTeacher();
+      allow update: if request.auth.uid == userId || isTeacher();
+      allow delete: if isTeacher();
+      allow create: if true;
+      allow list: if isTeacher();
+
+      // 학생 개인이 배부받은 숙제
+      match /assignedHomework/{homeworkId} {
+        allow read, write: if request.auth.uid == userId || isTeacher();
+      }
+
+      // 학생 개인이 배부받은 생활 규칙
+      match /assignedLifeRules/{ruleId} {
+        allow read, write: if request.auth.uid == userId || isTeacher();
+      }
+
+      // ✨ [스케치보드]
+      match /sketches/{sketchId} {
+        allow read, write, delete, create:
+          if request.auth != null && request.auth.uid == userId;
+      }
+
+      // ✨ [스쿨플랜 AI]
+      match /plans/{planId} {
+        allow read, write, create, delete:
+          if request.auth != null && request.auth.uid == userId;
+      }
+
+      // ✨ [한글 표 만들기]
+      match /tables/{tableId} {
+        allow read, write, create, delete:
+          if request.auth != null && request.auth.uid == userId;
+      }
+
+      // ✨ [공문서]
+      match /officials/{officialId} {
+        allow read, write, create, delete:
+          if request.auth != null && request.auth.uid == userId;
+      }
+
+      // ✨ [가정통신문]
+      match /letters/{letterId} {
+        allow read, write, create, delete:
+          if request.auth != null && request.auth.uid == userId;
+      }
+
+      // ✨ [따라쓰기 약속] 완료 기록
+      match /copyPromiseHistory/{historyId} {
+        allow read, write, create, delete:
+          if request.auth != null && (request.auth.uid == userId || isTeacher());
+      }
+
+      // ✨ [📚 에이두 북메이커] 사용자 전용 책 초안
+      match /bookDrafts/{draftId} {
+        allow read, write, create, delete:
+          if request.auth != null && request.auth.uid == userId;
+      }
+
+      // ✨ [📚 에이두 북메이커] 사용자 보유 책 목록
+      match /myBooks/{bookId} {
+        allow read, write:
+          if request.auth.uid == userId || isTeacher();
+      }
+
+      // ✨ [에이두 스페셜] 학급 관리
+      match /classes/{classId} {
+        allow read, write: if request.auth.uid == userId && isTeacher();
+      }
+
+      // ✨ [에이두 스페셜] 상점 물품 배부 내역
+      match /assignedShopItems/{itemId} {
+        allow read, write: if request.auth.uid == userId || isTeacher();
+      }
+
+      // ✨ [에이두 스페셜] 개별화교육계획(IEP)
+      match /ieps/{iepId} {
+        allow read, write: if request.auth.uid == userId && isTeacher();
+      }
+
+      // ✨ [에이두 스페셜] 성취 기준 기록
+      match /achievements/{achievementId} {
+        allow read, write: if request.auth.uid == userId && isTeacher();
+      }
+
+      // ✨ [에이두 스페셜] 행동 기록 및 로그
+      match /behaviors/{behaviorId} {
+        allow read: if canAccessBehavior(userId, behaviorId);
+        allow write: if request.auth.uid == userId && isTeacher();
+
+        match /logs/{logId} {
+          allow read: if canAccessBehavior(userId, behaviorId);
+          allow create: if canAccessBehavior(userId, behaviorId);
+          allow update: if canAccessBehavior(userId, behaviorId) && (
+            request.auth.uid == userId ||
+            request.auth.uid == resource.data.recordedBy
+          );
+          allow delete: if request.auth.uid == userId && isTeacher();
+        }
+      }
+
+      // ✨ [에이두 스페셜] 공유 받은 행동 기록 인덱스
+      match /sharedBehaviors/{sharedId} {
+        allow read: if request.auth.uid == userId || isTeacher();
+        allow create, update: if isTeacher() && (
+          request.resource.data.ownerId == request.auth.uid ||
+          request.auth.uid == userId
+        );
+        allow delete: if isTeacher() && (
+          resource.data.ownerId == request.auth.uid ||
+          request.auth.uid == userId
+        );
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // ✨ [📚 에이두 북메이커] 실제 책 문서 (책 코드 기반)
+    // ──────────────────────────────────────────────────────────────
+    match /Book/{bookId} {
+      // 새 문서 생성 시 authorId 필드가 현재 사용자 UID와 일치해야 함
+      allow create: if request.auth != null &&
+                    request.resource.data.authorId == request.auth.uid;
+
+      // 읽기: 공개 책은 교사/학생 모두, 비공개는 작성자 또는 교사만
+      allow read: if request.auth != null &&
+                  (resource.data.authorId == request.auth.uid ||
+                   isTeacher() ||
+                   (resource.data.isPublic == true && isStudent()));
+
+      // 수정: 작성자만 가능하며 authorId를 변경할 수 없음
+      // 또한, 좋아요/댓글 수 증가를 위해 likesCount 또는 commentsCount 를
+      // +1만큼 증가시키는 업데이트는 모든 인증된 사용자에게 허용
+      allow update: if request.auth != null &&
+        (
+          (resource.data.authorId == request.auth.uid &&
+           request.resource.data.authorId == request.auth.uid)
+          || (
+            request.resource.data.diff(resource.data).changedKeys().hasOnly(['likesCount']) &&
+            request.resource.data.likesCount == resource.data.likesCount + 1
+          )
+          || (
+            request.resource.data.diff(resource.data).changedKeys().hasOnly(['commentsCount']) &&
+            request.resource.data.commentsCount == resource.data.commentsCount + 1
+          )
+        );
+
+      // 삭제: 작성자 또는 교사만 가능
+      allow delete: if request.auth != null &&
+        (resource.data.authorId == request.auth.uid || isTeacher());
+
+      // 책에 대한 좋아요 정보
+      match /likes/{userId} {
+        allow read: if request.auth != null;
+        allow create, delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // 책에 대한 댓글 및 댓글 좋아요
+      match /comments/{commentId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+
+        // 댓글 수정은 작성자 또는 교사만 가능
+        // 단, likesCount 를 +1 증가시키는 업데이트는 누구나 가능
+        allow update: if request.auth != null && (
+          resource.data.authorUid == request.auth.uid ||
+          isTeacher() ||
+          (
+            request.resource.data.diff(resource.data).changedKeys().hasOnly(['likesCount']) &&
+            request.resource.data.likesCount == resource.data.likesCount + 1
+          )
+        );
+
+        // 댓글 삭제: 작성자 또는 교사만 가능
+        allow delete: if request.auth != null && (
+          resource.data.authorUid == request.auth.uid || isTeacher()
+        );
+
+        match /likes/{userId} {
+          allow read: if request.auth != null;
+          allow create, delete: if request.auth != null && request.auth.uid == userId;
+        }
+      }
+    }
+
+    // 커뮤니티 게시판
+    match /communityPosts/{postId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null &&
+        (resource.data.authorId == request.auth.uid || isTeacher());
+
+      match /comments/{commentId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth != null &&
+          (resource.data.authorId == request.auth.uid || isTeacher());
+      }
+    }
+
+    // 관리자용 가입 로그
+    match /signupLog/{logId} {
+      allow create: if request.auth != null;
+      allow read: if isTeacher();
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 그 밖의 기존 컬렉션 규칙 (변경 없음)
+    // ──────────────────────────────────────────────────────────────
+    match /stocks/{stockId} {
+      allow read: if request.auth != null;
+      allow write: if isTeacher();
+    }
+
+    match /shopItems/{itemId} {
+      allow read: if request.auth != null;
+      allow write: if isTeacher();
+    }
+
+    match /learningProblems/{problemId} {
+      allow read: if request.auth != null;
+      allow write: if isTeacher();
+    }
+
+    match /lifeRules/{ruleId} {
+      allow read: if request.auth != null;
+      allow write: if isTeacher();
+    }
+
+    // 📚 [Reading Logs]
+    match /readingLogs/{logId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /metadata/{docId} {
+      allow read, write: if docId == 'counters' || isTeacher();
+    }
+
+    match /purchaseLog/{logId} {
+      allow create: if request.auth != null;
+      allow read, list: if isTeacher();
+    }
+
+    match /classes/{teacherId} {
+      allow get, update, delete: if request.auth.uid == teacherId && isTeacher();
+      allow create: if request.auth.uid == teacherId && isTeacher();
+
+      allow list: if isTeacher() ||
+        (request.auth != null &&
+         request.query != null &&
+         request.query.where('students', 'array-contains', request.auth.uid));
+
+      allow get: if
+        (request.auth.uid == teacherId && isTeacher()) ||
+        (request.auth != null &&
+         resource.data.students != null &&
+         request.auth.uid in resource.data.students);
+    }
+
+    // 'IEP 에이두' 앱 규칙
+    match /artifacts/{appId}/users/{userId}/{documents=**} {
+      allow read, write, create, delete:
+        if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 숙제 증명 코드 시스템
+    match /proofCodes/{codeId} {
+      allow read: if isTeacher();
+      allow write: if false;
+    }
+  }
+}
