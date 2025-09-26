@@ -65,6 +65,10 @@
         .plan-section-content td { border: 1px solid #cbd5e1; padding: 0.75rem; text-align: left; }
         .plan-section-content td { white-space: pre-line; }
         .plan-section-content th { background-color: #f1f5f9; font-weight: 600; }
+        .plan-section-content.raw-markdown {
+            white-space: pre-wrap;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
         #generated-official-container .official-plain-text {
             white-space: normal;
             line-height: 1.7;
@@ -842,8 +846,9 @@
                         generatedTableContainer.innerHTML = renderMarkdownTable(currentTableMarkdown);
                         tableOutputSection.classList.remove('hidden');
                         tableModifySection.classList.remove('hidden');
+                        const conciseTitle = await generateConciseTitleFromInput(topic, topic);
                         const docRef = await addDoc(collection(db, "users", user.uid, "tables"), {
-                            title: topic,
+                            title: conciseTitle,
                             createdAt: serverTimestamp(),
                             rawContent: currentTableMarkdown
                         });
@@ -1370,8 +1375,9 @@
                         letterOutputSection.classList.remove('hidden');
                         letterModifySection.classList.remove('hidden');
                         letterTopic.value = '';
+                        const conciseTitle = await generateConciseTitleFromInput(topic, topic);
                         const docRef = await addDoc(collection(db, "users", user.uid, "letters"), {
-                            title: topic,
+                            title: conciseTitle,
                             createdAt: serverTimestamp(),
                             rawContent: currentLetterMarkdown
                         });
@@ -1999,8 +2005,7 @@
                 if (sectionTitle.includes('세부 추진 계획')) {
                     if (sectionContentMarkdown) {
                         sectionDiv.dataset.markdownContent = sectionContentMarkdown;
-                        contentDiv.innerHTML = parseMarkdown(sectionContentMarkdown);
-                        addTableCopyButtons(contentDiv);
+                        renderSectionContent(contentDiv, sectionContentMarkdown, { isDetail: true });
 
                         const controlsDiv = document.createElement('div');
                         controlsDiv.className = 'absolute top-4 right-4 flex gap-2';
@@ -2041,8 +2046,7 @@
                     }
                 } else {
                     sectionDiv.dataset.markdownContent = sectionContentMarkdown;
-                    contentDiv.innerHTML = parseMarkdown(sectionContentMarkdown);
-                    addTableCopyButtons(contentDiv);
+                    renderSectionContent(contentDiv, sectionContentMarkdown);
 
                     const controlsDiv = document.createElement('div');
                     controlsDiv.className = 'absolute top-4 right-4 flex gap-2';
@@ -2284,6 +2288,20 @@
             return marked.parse(ensureBulletNewlines(markdown));
         }
 
+        function renderSectionContent(container, markdown, options = {}) {
+            if (!container) return;
+            const { isDetail = false } = options;
+            container.classList.add('plan-section-content');
+            if (isDetail) {
+                container.classList.add('raw-markdown');
+                container.textContent = markdown || '';
+            } else {
+                container.classList.remove('raw-markdown');
+                container.innerHTML = parseMarkdown(markdown || '');
+                addTableCopyButtons(container);
+            }
+        }
+
         function markdownTableToHtmlClipboard(markdown) {
             const text = ensureBulletNewlines(markdown);
             const rows = text
@@ -2379,6 +2397,35 @@
             } else {
                 showToast(isHtml ? '표(HTML)가 클립보드에 복사되었습니다.' : '내용이 클립보드에 복사되었습니다.');
             }
+        }
+
+        async function generateConciseTitleFromInput(text, fallback = '') {
+            const source = (text || '').trim();
+            if (!source) return fallback || '';
+            const prompt = `다음 내용을 20자 이내의 간결한 제목으로 요약해줘. 불필요한 따옴표 없이 제목만 출력해. 내용: ${source}`;
+            try {
+                const response = await fetch('/.netlify/functions/generatePlan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, model: GEMINI_MODEL })
+                });
+                const result = await response.json();
+                const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (rawText) {
+                    const markdown = extractMarkdownFromText(rawText);
+                    const candidate = markdown
+                        .split('\n')
+                        .map(line => line.trim())
+                        .find(line => line.length);
+                    if (candidate) {
+                        return candidate.replace(/^[-#*\d\.\s]+/, '').trim();
+                    }
+                }
+            } catch (err) {
+                console.error('Concise Title Generation Error:', err);
+            }
+            if (fallback && fallback.trim()) return fallback.trim();
+            return source.slice(0, 20);
         }
 
         function addTableCopyButtons(container) {
@@ -2573,34 +2620,16 @@
             summaryPopupWindow.focus();
         }
 
-        async function generatePlanSummary(options = {}) {
-            const { openPopup = true, showToastMessage = true } = options;
-            if (isSummaryGenerating) return null;
-            const sections = planContainer ? planContainer.querySelectorAll('.plan-section') : [];
-            if (!sections || !sections.length) return null;
-            isSummaryGenerating = true;
-            if (showToastMessage) {
-                showToast('요약본 생성 중입니다..');
-            }
-            const sectionData = Array.from(sections).map(sec => {
-                const title = sec.querySelector('h3').textContent;
-                const content = sec.dataset.markdownContent || sec.querySelector('.plan-section-content').innerText.trim();
-                return {
-                    title,
-                    content,
-                    isDetail: title.includes('세부 추진 계획')
-                };
-            });
-            let prompt = `다음은 학교 업무 계획서의 항목들이다.\n`;
-            prompt += `- 제목에 '세부 추진 계획'이 포함된 항목만 핵심이 드러나도록 요약해줘.\n`;
-            prompt += `- '세부 추진 계획' 항목은 다른 항목과 동일하게 '-'로 시작하는 불릿 포인트 형식으로 핵심을 나열해줘.\n`;
-            prompt += `- '세부 추진 계획' 항목의 각 불릿은 "항목: 설명" 형태의 한 문장으로 작성해.\n`;
-            prompt += `- 다른 모든 항목은 글자, 줄바꿈, 표 형식을 포함해 제공된 내용을 한 글자도 수정하지 말고 그대로 출력해줘.\n`;
-            prompt += `- 출력 순서와 형식은 입력과 동일하게 유지하고, 각 항목은 '## 제목' 헤더 아래에 작성해줘.\n`;
-            prompt += `- 표가 있는 경우 마크다운 표 형식을 반드시 유지해줘.\n`;
-            prompt += `아래에 각 항목의 원본이 [항목 시작]과 [항목 종료] 사이에 제공돼.\n`;
-            sectionData.forEach(({ title, content, isDetail }) => {
-                prompt += `\n[항목 시작]\n제목: ${title}\n처리 방식: ${isDetail ? '요약' : '원문 유지'}\n내용:\n${content}\n[항목 종료]\n`;
+        async function summarizeDetailSections(detailSections) {
+            if (!detailSections.length) return new Map();
+            let prompt = `다음은 학교 업무 계획서의 '세부 추진 계획' 섹션 원문이다.\n`;
+            prompt += `- 각 섹션 제목은 그대로 사용해.\n`;
+            prompt += `- 각 섹션은 아래 형식을 지켜 작성해.\n`;
+            prompt += `  ## 제목\n  - 항목: 설명\n  - 항목: 설명\n`; 
+            prompt += `- 불릿은 '-'로 시작하고 '항목: 설명' 구조를 유지해.\n`;
+            prompt += `- 다른 설명이나 추가 문구 없이 섹션별 결과만 출력해.\n`;
+            detailSections.forEach(({ title, content }) => {
+                prompt += `\n[섹션 시작]\n제목: ${title}\n내용:\n${content}\n[섹션 종료]\n`;
             });
             try {
                 const response = await fetch('/.netlify/functions/generatePlan', {
@@ -2610,28 +2639,68 @@
                 });
                 const result = await response.json();
                 const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                const summaryMap = new Map();
                 if (text) {
-                    let summaryMarkdown = extractMarkdownFromText(text);
-                    summaryMarkdown = summaryMarkdown
-                        .split('\n')
-                        .filter(line => {
-                            const trimmed = line.trim();
-                            return !trimmed.startsWith('처리 방식: 요약 내용') && !trimmed.startsWith('처리 방식: 원문 유지 내용');
-                        })
-                        .join('\n')
-                        .trim();
-                    await saveCurrentSummary(summaryMarkdown);
-                    if (openPopup) {
-                        showSummaryPopup(summaryMarkdown);
-                    }
-                    return summaryMarkdown;
+                    const markdown = extractMarkdownFromText(text);
+                    const blocks = markdown.match(/## [^\n]+(?:\n[^#][^\n]*)*/g) || [];
+                    blocks.forEach(block => {
+                        const lines = block.trim().split('\n');
+                        const titleLine = lines.shift() || '';
+                        const title = titleLine.replace(/^##\s*/, '').trim();
+                        const content = lines.join('\n').trim();
+                        if (title) {
+                            const rebuilt = [`## ${title}`, content].filter(Boolean).join('\n');
+                            summaryMap.set(title, rebuilt.trim());
+                        }
+                    });
+                    if (summaryMap.size) return summaryMap;
                 }
             } catch (err) {
+                console.error('Detail Summary Generation Error:', err);
+            }
+            return new Map();
+        }
+
+        async function generatePlanSummary(options = {}) {
+            const { openPopup = true, showToastMessage = true } = options;
+            if (isSummaryGenerating) return null;
+            const sections = planContainer ? planContainer.querySelectorAll('.plan-section') : [];
+            if (!sections || !sections.length) return null;
+            isSummaryGenerating = true;
+            if (showToastMessage) {
+                showToast('요약본 생성 중입니다..');
+            }
+            try {
+                const sectionData = Array.from(sections).map(sec => {
+                    const title = sec.querySelector('h3').textContent;
+                    const content = sec.dataset.markdownContent || sec.querySelector('.plan-section-content').innerText.trim();
+                    return {
+                        title,
+                        content,
+                        isDetail: title.includes('세부 추진 계획')
+                    };
+                });
+                const detailSections = sectionData.filter(sec => sec.isDetail);
+                const detailSummaryMap = await summarizeDetailSections(detailSections);
+                const summaryParts = sectionData.map(({ title, content, isDetail }) => {
+                    if (isDetail) {
+                        const summarized = detailSummaryMap.get(title);
+                        if (summarized) return summarized.trim();
+                    }
+                    return `## ${title}\n${content}`.trim();
+                });
+                const summaryMarkdown = summaryParts.filter(Boolean).join('\n\n').trim();
+                await saveCurrentSummary(summaryMarkdown);
+                if (openPopup) {
+                    showSummaryPopup(summaryMarkdown);
+                }
+                return summaryMarkdown;
+            } catch (err) {
                 console.error('Summary Error:', err);
+                return null;
             } finally {
                 isSummaryGenerating = false;
             }
-            return null;
         }
 
 async function saveCurrentPlan() {
@@ -2703,7 +2772,8 @@ async function saveCurrentPlan() {
                                     .replace(/함$/gm, '한다');
                                 section.dataset.markdownContent = newContent;
                                 const contentDiv = section.querySelector('.plan-section-content');
-                                contentDiv.innerHTML = parseMarkdown(newContent);
+                                const isDetailSection = section.querySelector('h3').textContent.includes('세부 추진 계획');
+                                renderSectionContent(contentDiv, newContent, { isDetail: isDetailSection });
                             }
                         }
                         saveCurrentPlan();
@@ -2803,8 +2873,7 @@ async function saveCurrentPlan() {
                         newContent = newContent.replace(/합니다\./gm, '한다.').replace(/합니다$/gm, '한다').replace(/함\./gm, '한다.').replace(/함$/gm, '한다');
                         newContent = removeBudgetInfo(newContent);
                         sectionDiv.dataset.markdownContent = newContent;
-                        contentDiv.innerHTML = parseMarkdown(newContent);
-                        addTableCopyButtons(contentDiv);
+                        renderSectionContent(contentDiv, newContent, { isDetail: true });
 
                         const oldControls = sectionDiv.querySelector('.absolute.top-4.right-4');
                         if (oldControls) oldControls.remove();
@@ -2909,7 +2978,8 @@ async function saveCurrentPlan() {
                             });
                         }
                         sectionDiv.dataset.markdownContent = newContent;
-                        contentDiv.innerHTML = parseMarkdown(newContent);
+                                const isDetailSection = section.querySelector('h3').textContent.includes('세부 추진 계획');
+                                renderSectionContent(contentDiv, newContent, { isDetail: isDetailSection });
                         addTableCopyButtons(contentDiv);
                         await saveCurrentPlan();
                     }
@@ -2944,9 +3014,8 @@ async function saveCurrentPlan() {
                     const newMarkdown = textarea.value;
                     sectionDiv.dataset.markdownContent = newMarkdown;
                     const newContentDiv = document.createElement('div');
-                    newContentDiv.className = 'plan-section-content';
-                    newContentDiv.innerHTML = parseMarkdown(newMarkdown);
-                    addTableCopyButtons(newContentDiv);
+                    const isDetailSection = sectionDiv.querySelector('h3').textContent.includes('세부 추진 계획');
+                    renderSectionContent(newContentDiv, newMarkdown, { isDetail: isDetailSection });
                     textarea.replaceWith(newContentDiv);
                     saveCurrentPlan();
                 }
@@ -3038,8 +3107,8 @@ async function saveCurrentPlan() {
                             newContent = normalizeBulletList(newContent, options);
                         }
                         sectionDiv.dataset.markdownContent = newContent;
-                        contentDiv.innerHTML = parseMarkdown(newContent);
-                        addTableCopyButtons(contentDiv);
+                        const isDetailSection = secTitle.includes('세부 추진 계획');
+                        renderSectionContent(contentDiv, newContent, { isDetail: isDetailSection });
                         await saveCurrentPlan();
                     }
                 } catch (err) {
