@@ -2498,6 +2498,7 @@
             const toggleEditBtn = popupDoc.getElementById('toggle-edit-btn');
             const copyBtn = popupDoc.getElementById('copy-summary-btn');
             const regenerateBtn = popupDoc.getElementById('regenerate-summary-btn');
+            let isEditing = false;
 
             const renderMarkdown = (markdown) => parseMarkdown(markdown);
             const applyManualEdit = () => {
@@ -2518,17 +2519,17 @@
             }
 
             if (toggleEditBtn && editArea) {
-                let isEditing = false;
                 toggleEditBtn.addEventListener('click', () => {
-                    isEditing = !isEditing;
-                    if (isEditing) {
+                    if (!isEditing) {
+                        isEditing = true;
                         toggleEditBtn.textContent = '편집 완료';
                         editArea.value = currentMarkdown;
                         editArea.classList.remove('hidden');
                         editArea.focus();
                     } else {
-                        toggleEditBtn.textContent = '수동 편집';
                         applyManualEdit();
+                        isEditing = false;
+                        toggleEditBtn.textContent = '수동 편집';
                         editArea.classList.add('hidden');
                     }
                 });
@@ -2566,7 +2567,14 @@
             if (copyBtn) {
                 copyBtn.addEventListener('click', async () => {
                     try {
-                        applyManualEdit();
+                        if (isEditing && editArea) {
+                            applyManualEdit();
+                            isEditing = false;
+                            if (toggleEditBtn) {
+                                toggleEditBtn.textContent = '수동 편집';
+                            }
+                            editArea.classList.add('hidden');
+                        }
                         const copied = await copyMarkdown();
                         if (copied) {
                             copyBtn.textContent = '복사 완료';
@@ -2625,8 +2633,11 @@
             let prompt = `다음은 학교 업무 계획서의 '세부 추진 계획' 섹션 원문이다.\n`;
             prompt += `- 각 섹션 제목은 그대로 사용해.\n`;
             prompt += `- 각 섹션은 아래 형식을 지켜 작성해.\n`;
-            prompt += `  ## 제목\n  - 항목: 설명\n  - 항목: 설명\n`; 
-            prompt += `- 불릿은 '-'로 시작하고 '항목: 설명' 구조를 유지해.\n`;
+            prompt += `  ## 제목\n  - 핵심 내용\n  - 핵심 내용\n`;
+            prompt += `- 불릿은 '-'로 시작하고 간결한 한 문장으로만 작성해.\n`;
+            prompt += `- '항목:' 같은 접두어는 절대 사용하지 마.\n`;
+            prompt += `- 각 섹션별 불릿 수는 최대 3개로 제한해.\n`;
+            prompt += `- 각 불릿은 30자 이내로 요약해 핵심만 전달해.\n`;
             prompt += `- 다른 설명이나 추가 문구 없이 섹션별 결과만 출력해.\n`;
             detailSections.forEach(({ title, content }) => {
                 prompt += `\n[섹션 시작]\n제목: ${title}\n내용:\n${content}\n[섹션 종료]\n`;
@@ -2685,7 +2696,9 @@
                 const summaryParts = sectionData.map(({ title, content, isDetail }) => {
                     if (isDetail) {
                         const summarized = detailSummaryMap.get(title);
-                        if (summarized) return summarized.trim();
+                        if (summarized) {
+                            return summarized.replace(/-\s*항목:\s*/g, '- ').trim();
+                        }
                     }
                     return `## ${title}\n${content}`.trim();
                 });
