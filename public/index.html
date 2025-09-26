@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>에이두 플랜 - AI 학교 운영계획서</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -151,6 +150,8 @@
                         <a href="#table" id="nav-table" class="nav-link">표 만들기(HWP)</a>
                         <a href="#official" id="nav-official" class="nav-link">기안문</a>
                         <a href="#letter" id="nav-letter" class="nav-link">가정통신문</a>
+                        <a href="#community" id="nav-community" class="nav-link">커뮤니티</a>
+                        <button id="my-info-btn" class="text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1 px-3 rounded-md transition-colors">내 정보</button>
                         <button id="logout-btn" class="text-sm bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded-md transition-colors">로그아웃</button>
                     </nav>
                 </div>
@@ -159,20 +160,35 @@
                 <!-- Home View -->
                 <div id="home-view">
                     <h2 class="text-3xl font-bold mb-6">홈</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
+                    <div class="space-y-6">
+                        <div class="bg-white p-6 rounded-lg shadow-lg">
                             <h3 class="text-xl font-bold mb-2">안녕하세요, <span id="home-user-email"></span> 선생님!</h3>
                             <p class="text-gray-600 mb-4">에이두 플랜과 함께 학교의 업무를 간편히 관리해보세요.</p>
                         </div>
                         <div class="bg-white p-6 rounded-lg shadow-lg">
-                            <h3 class="text-xl font-bold mb-4">생성 통계</h3>
-                            <div id="stats-chart-container" class="h-48 flex items-center justify-center">
-                                <canvas id="statsChart"></canvas>
-                            </div>
-                        </div>
-                        <div class="md:col-span-2 lg:col-span-3 bg-white p-6 rounded-lg shadow-lg">
                             <h3 class="text-xl font-bold mb-4">최근 생성한 계획서</h3>
                             <div id="recent-plans-list" class="space-y-3"></div>
+                        </div>
+                    </div>
+                    <div class="mt-10">
+                        <h3 class="text-2xl font-bold mb-4">최근 자료 모아보기</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                            <div class="bg-white p-6 rounded-lg shadow-lg">
+                                <h4 class="text-lg font-semibold mb-3">운영계획서</h4>
+                                <div id="home-plans-list" class="space-y-2 text-sm text-gray-700"></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg">
+                                <h4 class="text-lg font-semibold mb-3">표</h4>
+                                <div id="home-tables-list" class="space-y-2 text-sm text-gray-700"></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg">
+                                <h4 class="text-lg font-semibold mb-3">가정통신문</h4>
+                                <div id="home-letters-list" class="space-y-2 text-sm text-gray-700"></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg">
+                                <h4 class="text-lg font-semibold mb-3">커뮤니티</h4>
+                                <div id="home-community-list" class="space-y-2 text-sm text-gray-700"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -255,7 +271,8 @@
                                 </form>
                             </div>
                             <div class="mt-8">
-                                <h3 class="text-lg font-bold mb-4 border-b pb-2">이전 계획서 작성 목록</h3>
+                                <h3 class="text-lg font-bold mb-2">이전 계획서 작성 목록</h3>
+                                <input type="search" id="plan-search" placeholder="제목 검색" class="w-full mb-3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                                 <div id="plan-saved-list" class="space-y-3 max-h-60 overflow-y-auto">
                                     <!-- Recent plans will be dynamically inserted here -->
                                 </div>
@@ -321,6 +338,7 @@
                                 </div>
                                 <div>
                                     <h3 class="text-lg font-semibold mt-6 mb-2">저장된 목록</h3>
+                                    <input type="search" id="table-search" placeholder="제목 검색" class="w-full mb-3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                                     <div id="table-saved-list" class="space-y-3"></div>
                                 </div>
                             </aside>
@@ -378,6 +396,7 @@
                                 </div>
                                 <div>
                                     <h3 class="text-lg font-semibold mt-6 mb-2">저장된 목록</h3>
+                                    <input type="search" id="official-search" placeholder="제목 검색" class="w-full mb-3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                                     <div id="official-saved-list" class="space-y-3"></div>
                                 </div>
                             </aside>
@@ -432,6 +451,7 @@
                                 </div>
                                 <div>
                                     <h3 class="text-lg font-semibold mt-6 mb-2">저장된 목록</h3>
+                                    <input type="search" id="letter-search" placeholder="제목 검색" class="w-full mb-3 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                                     <div id="letter-saved-list" class="space-y-3"></div>
                                 </div>
                             </aside>
@@ -449,17 +469,64 @@
                         </div>
                     </div>
                 </div>
+                <!-- Community View -->
+                <div id="community-view" class="hidden">
+                    <div class="container mx-auto p-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                            <h2 class="text-3xl font-bold">커뮤니티</h2>
+                            <button id="open-create-post-btn" class="self-start md:self-auto bg-[#7A9D54] hover:bg-[#6a8a4a] text-white font-semibold px-4 py-2 rounded-md transition-colors">글 작성</button>
+                        </div>
+                        <input type="search" id="community-search" placeholder="제목 검색" class="w-full mb-4 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <div id="community-post-list" class="space-y-4"></div>
+                    </div>
+                </div>
             </main>
         </div>
         <!-- Toast Message -->
         <div id="toast" class="fixed bottom-10 right-10 bg-gray-900 text-white py-2 px-5 rounded-lg shadow-lg opacity-0 transition-opacity duration-300">
             복사되었습니다!
         </div>
+        <!-- Profile Modal -->
+        <div id="profile-modal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+                <h3 class="text-xl font-semibold mb-2">내 정보</h3>
+                <p class="text-sm text-gray-500 mb-4">로그인 계정: <span id="profile-email" class="font-medium text-gray-700"></span></p>
+                <label for="profile-name-input" class="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                <input id="profile-name-input" type="text" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="이름을 입력하세요">
+                <div class="mt-6 flex justify-end gap-2">
+                    <button id="close-profile-modal" class="px-4 py-2 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100">취소</button>
+                    <button id="save-profile-btn" class="px-4 py-2 rounded-md bg-[#7A9D54] text-white hover:bg-[#6a8a4a]">저장</button>
+                </div>
+            </div>
+        </div>
+        <!-- Community Post Modal -->
+        <div id="community-post-modal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold">새 글 작성</h3>
+                    <button id="close-community-modal" class="text-gray-500 hover:text-gray-700">✕</button>
+                </div>
+                <form id="community-post-form" class="space-y-4">
+                    <div>
+                        <label for="community-post-title" class="block text-sm font-medium text-gray-700 mb-1">제목</label>
+                        <input id="community-post-title" type="text" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                    </div>
+                    <div>
+                        <label for="community-post-content" class="block text-sm font-medium text-gray-700 mb-1">내용</label>
+                        <textarea id="community-post-content" rows="6" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" required></textarea>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button type="button" id="cancel-community-post" class="px-4 py-2 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100">취소</button>
+                        <button type="submit" class="px-4 py-2 rounded-md bg-[#7A9D54] text-white hover:bg-[#6a8a4a]">등록</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, getDocs, doc, getDoc, deleteDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // Your web app's Firebase configuration
@@ -495,12 +562,37 @@
         const navTable = document.getElementById('nav-table');
         const navOfficial = document.getElementById('nav-official');
         const navLetter = document.getElementById('nav-letter');
+        const navCommunity = document.getElementById('nav-community');
+        const myInfoBtn = document.getElementById('my-info-btn');
+        const profileModal = document.getElementById('profile-modal');
+        const profileNameInput = document.getElementById('profile-name-input');
+        const profileEmail = document.getElementById('profile-email');
+        const closeProfileModalBtn = document.getElementById('close-profile-modal');
+        const saveProfileBtn = document.getElementById('save-profile-btn');
         const homeLink = document.getElementById('home-link');
         const homeView = document.getElementById('home-view');
         const planView = document.getElementById('plan-view');
         const tableView = document.getElementById('table-view');
         const officialView = document.getElementById('official-view');
         const letterView = document.getElementById('letter-view');
+        const communityView = document.getElementById('community-view');
+        const communityPostList = document.getElementById('community-post-list');
+        const communitySearchInput = document.getElementById('community-search');
+        const openCreatePostBtn = document.getElementById('open-create-post-btn');
+        const communityPostModal = document.getElementById('community-post-modal');
+        const communityPostForm = document.getElementById('community-post-form');
+        const communityPostTitleInput = document.getElementById('community-post-title');
+        const communityPostContentInput = document.getElementById('community-post-content');
+        const closeCommunityModalBtn = document.getElementById('close-community-modal');
+        const cancelCommunityPostBtn = document.getElementById('cancel-community-post');
+        const homePlansList = document.getElementById('home-plans-list');
+        const homeTablesList = document.getElementById('home-tables-list');
+        const homeLettersList = document.getElementById('home-letters-list');
+        const homeCommunityList = document.getElementById('home-community-list');
+        const planSearchInput = document.getElementById('plan-search');
+        const tableSearchInput = document.getElementById('table-search');
+        const officialSearchInput = document.getElementById('official-search');
+        const letterSearchInput = document.getElementById('letter-search');
         const recentPlansList = document.getElementById('recent-plans-list');
         const form = document.getElementById('plan-form');
         const GEMINI_MODEL = 'gemini-2.0-flash-lite-001';
@@ -719,10 +811,71 @@
         let isEditingOfficial = false;
         let currentOfficialId = null;
 
-        const views = { home: homeView, plan: planView, table: tableView, official: officialView, letter: letterView };
-        const navLinks = { home: navHome, plan: navPlan, table: navTable, official: navOfficial, letter: navLetter };
+        const convertTimestampToDate = (timestamp) => {
+            if (!timestamp) return null;
+            if (typeof timestamp.toDate === 'function') return timestamp.toDate();
+            if (timestamp.seconds) return new Date(timestamp.seconds * 1000);
+            return new Date(timestamp);
+        };
 
-        let statsChartInstance = null;
+        const formatDateTime = (timestamp, includeTime = true) => {
+            const date = convertTimestampToDate(timestamp);
+            if (!date || Number.isNaN(date.getTime())) return '날짜 없음';
+            if (!includeTime) return date.toLocaleDateString('ko-KR');
+            return date.toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        };
+
+        const updateHomeListSection = (container, items, emptyText) => {
+            if (!container) return;
+            container.innerHTML = '';
+            if (!items || items.length === 0) {
+                container.innerHTML = `<p class="text-sm text-gray-400">${emptyText}</p>`;
+                return;
+            }
+            items.slice(0, 4).forEach(item => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'py-2 border-b border-gray-100 last:border-b-0';
+                const title = document.createElement('p');
+                title.className = 'text-sm font-medium text-gray-800 truncate';
+                title.textContent = item.title || '제목 없음';
+                const date = document.createElement('p');
+                date.className = 'text-xs text-gray-500 mt-1';
+                date.textContent = formatDateTime(item.createdAt, false);
+                wrapper.appendChild(title);
+                wrapper.appendChild(date);
+                container.appendChild(wrapper);
+            });
+        };
+
+        const updateHomePlansSection = (plans) => updateHomeListSection(homePlansList, plans, '생성된 계획서가 없습니다.');
+        const updateHomeTablesSection = (tables) => updateHomeListSection(homeTablesList, tables, '생성된 표가 없습니다.');
+        const updateHomeLettersSection = (letters) => updateHomeListSection(homeLettersList, letters, '생성된 가정통신문이 없습니다.');
+        const updateHomeCommunitySection = (posts) => updateHomeListSection(homeCommunityList, posts, '작성된 커뮤니티 글이 없습니다.');
+
+        const openModal = (modal) => { if (modal) modal.classList.remove('hidden'); };
+        const closeModal = (modal) => { if (modal) modal.classList.add('hidden'); };
+
+        let communityPostsCache = [];
+        let activePostMenu = null;
+
+        const closeActivePostMenu = () => {
+            if (activePostMenu) {
+                activePostMenu.classList.add('hidden');
+                activePostMenu = null;
+            }
+        };
+
+        const attachModalDismiss = (modal) => {
+            if (!modal) return;
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    closeModal(modal);
+                }
+            });
+        };
+
+        const views = { home: homeView, plan: planView, table: tableView, official: officialView, letter: letterView, community: communityView };
+        const navLinks = { home: navHome, plan: navPlan, table: navTable, official: navOfficial, letter: navLetter, community: navCommunity };
 
         // --- AUTHENTICATION ---
         onAuthStateChanged(auth, user => {
@@ -734,6 +887,7 @@
                 userEmailSpan.textContent = userEmail;
                 homeUserEmailSpan.textContent = userEmail;
                 switchView('home');
+                refreshHomeSummaries();
             } else {
                 authView.classList.remove('hidden');
                 mainAppView.classList.add('hidden');
@@ -787,13 +941,19 @@
             const targetView = view || 'home';
             Object.entries(views).forEach(([key, section]) => {
                 section.classList.toggle('hidden', key !== targetView);
-                navLinks[key].classList.toggle('active', key === targetView);
+                if (navLinks[key]) {
+                    navLinks[key].classList.toggle('active', key === targetView);
+                }
             });
             window.location.hash = targetView;
             if (targetView === 'plan' && planModifySection) {
                 planModifySection.classList.add('hidden');
             }
-            if (targetView === 'home' || targetView === 'plan') {
+            if (targetView === 'home') {
+                loadAndDisplayPlans();
+                refreshHomeSummaries();
+            }
+            if (targetView === 'plan') {
                 loadAndDisplayPlans();
             }
             if (targetView === 'table') {
@@ -805,6 +965,9 @@
             if (targetView === 'letter') {
                 loadAndDisplayItems('letters', letterSavedList, viewLetter);
             }
+            if (targetView === 'community') {
+                loadCommunityPosts();
+            }
         };
 
         navHome.addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
@@ -813,6 +976,404 @@
         navTable.addEventListener('click', (e) => { e.preventDefault(); switchView('table'); });
         navOfficial.addEventListener('click', (e) => { e.preventDefault(); switchView('official'); });
         navLetter.addEventListener('click', (e) => { e.preventDefault(); switchView('letter'); });
+        if (navCommunity) {
+            navCommunity.addEventListener('click', (e) => { e.preventDefault(); switchView('community'); });
+        }
+
+        if (planSearchInput) {
+            planSearchInput.addEventListener('input', () => loadAndDisplayPlans());
+        }
+        if (tableSearchInput) {
+            tableSearchInput.addEventListener('input', () => loadAndDisplayItems('tables', tableSavedList, viewTable));
+        }
+        if (officialSearchInput) {
+            officialSearchInput.addEventListener('input', () => loadAndDisplayItems('officials', officialSavedList, viewOfficial));
+        }
+        if (letterSearchInput) {
+            letterSearchInput.addEventListener('input', () => loadAndDisplayItems('letters', letterSavedList, viewLetter));
+        }
+        if (communitySearchInput) {
+            communitySearchInput.addEventListener('input', () => loadCommunityPosts());
+        }
+
+        attachModalDismiss(profileModal);
+        attachModalDismiss(communityPostModal);
+        document.addEventListener('click', closeActivePostMenu);
+
+        if (myInfoBtn) {
+            myInfoBtn.addEventListener('click', () => {
+                const user = auth.currentUser;
+                if (!user) return;
+                profileNameInput.value = user.displayName || '';
+                profileEmail.textContent = user.email || '';
+                openModal(profileModal);
+            });
+        }
+        if (closeProfileModalBtn) {
+            closeProfileModalBtn.addEventListener('click', () => closeModal(profileModal));
+        }
+        if (saveProfileBtn) {
+            saveProfileBtn.addEventListener('click', async () => {
+                const user = auth.currentUser;
+                if (!user) return;
+                const newName = profileNameInput.value.trim();
+                try {
+                    await updateProfile(user, { displayName: newName || null });
+                    const updatedName = newName || user.email;
+                    userEmailSpan.textContent = updatedName;
+                    homeUserEmailSpan.textContent = updatedName;
+                    closeModal(profileModal);
+                    showToast('이름을 저장했습니다.');
+                } catch (error) {
+                    console.error('Profile update error:', error);
+                }
+            });
+        }
+
+        const closeCommunityModal = () => closeModal(communityPostModal);
+        if (openCreatePostBtn) {
+            openCreatePostBtn.addEventListener('click', () => {
+                communityPostTitleInput.value = '';
+                communityPostContentInput.value = '';
+                openModal(communityPostModal);
+            });
+        }
+        if (closeCommunityModalBtn) {
+            closeCommunityModalBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                closeCommunityModal();
+            });
+        }
+        if (cancelCommunityPostBtn) {
+            cancelCommunityPostBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                closeCommunityModal();
+            });
+        }
+        if (communityPostForm) {
+            communityPostForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const user = auth.currentUser;
+                if (!user) return;
+                const title = communityPostTitleInput.value.trim();
+                const content = communityPostContentInput.value.trim();
+                if (!title || !content) return;
+                try {
+                    await addDoc(collection(db, 'communityPosts'), {
+                        title,
+                        content,
+                        authorId: user.uid,
+                        authorName: user.displayName || user.email,
+                        createdAt: serverTimestamp()
+                    });
+                    closeCommunityModal();
+                    communityPostForm.reset();
+                    showToast('글이 등록되었습니다.');
+                    loadCommunityPosts();
+                } catch (error) {
+                    console.error('Error creating community post:', error);
+                }
+            });
+        }
+
+        const loadAndRenderComments = async (postId, container) => {
+            if (!container) return;
+            const user = auth.currentUser;
+            try {
+                const commentsRef = collection(db, 'communityPosts', postId, 'comments');
+                const snap = await getDocs(commentsRef);
+                const comments = [];
+                snap.forEach(docSnap => comments.push({ id: docSnap.id, ...docSnap.data() }));
+                comments.sort((a, b) => (a.createdAt?.toMillis?.() || a.createdAt?.seconds || 0) - (b.createdAt?.toMillis?.() || b.createdAt?.seconds || 0));
+                container.innerHTML = '';
+                if (comments.length === 0) {
+                    container.innerHTML = '<p class="text-sm text-gray-500">첫 댓글을 남겨보세요.</p>';
+                    return;
+                }
+                comments.forEach(comment => {
+                    const commentCard = document.createElement('div');
+                    commentCard.className = 'bg-gray-50 border border-gray-200 rounded-md px-3 py-2';
+
+                    const metaRow = document.createElement('div');
+                    metaRow.className = 'flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500';
+                    const metaLeft = document.createElement('div');
+                    metaLeft.className = 'flex items-center gap-2';
+                    const authorSpan = document.createElement('span');
+                    authorSpan.textContent = comment.authorName || '익명';
+                    const timeSpan = document.createElement('span');
+                    timeSpan.textContent = formatDateTime(comment.createdAt, true);
+                    metaLeft.appendChild(authorSpan);
+                    metaLeft.appendChild(document.createTextNode('·'));
+                    metaLeft.appendChild(timeSpan);
+                    metaRow.appendChild(metaLeft);
+
+                    if (user && comment.authorId === user.uid) {
+                        const actionWrap = document.createElement('div');
+                        actionWrap.className = 'flex items-center gap-2';
+                        const editBtn = document.createElement('button');
+                        editBtn.type = 'button';
+                        editBtn.className = 'text-blue-600 hover:underline';
+                        editBtn.textContent = '수정';
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.type = 'button';
+                        deleteBtn.className = 'text-red-500 hover:underline';
+                        deleteBtn.textContent = '삭제';
+                        actionWrap.appendChild(editBtn);
+                        actionWrap.appendChild(deleteBtn);
+                        metaRow.appendChild(actionWrap);
+
+                        editBtn.addEventListener('click', async () => {
+                            const updated = prompt('댓글을 수정하세요', comment.content || '');
+                            if (!updated || !updated.trim()) return;
+                            try {
+                                await updateDoc(doc(db, 'communityPosts', postId, 'comments', comment.id), {
+                                    content: updated.trim(),
+                                    updatedAt: serverTimestamp()
+                                });
+                                showToast('댓글이 수정되었습니다.');
+                                await loadAndRenderComments(postId, container);
+                            } catch (error) {
+                                console.error('Error updating comment:', error);
+                            }
+                        });
+
+                        deleteBtn.addEventListener('click', async () => {
+                            if (!confirm('댓글을 삭제하시겠습니까?')) return;
+                            try {
+                                await deleteDoc(doc(db, 'communityPosts', postId, 'comments', comment.id));
+                                showToast('댓글이 삭제되었습니다.');
+                                await loadAndRenderComments(postId, container);
+                            } catch (error) {
+                                console.error('Error deleting comment:', error);
+                            }
+                        });
+                    }
+
+                    const contentEl = document.createElement('p');
+                    contentEl.className = 'mt-2 text-sm text-gray-700 whitespace-pre-wrap';
+                    contentEl.textContent = comment.content || '';
+
+                    commentCard.appendChild(metaRow);
+                    commentCard.appendChild(contentEl);
+                    container.appendChild(commentCard);
+                });
+            } catch (error) {
+                console.error('Error loading comments:', error);
+                container.innerHTML = '<p class="text-sm text-red-500">댓글을 불러오지 못했습니다.</p>';
+            }
+        };
+
+        const renderCommunityPosts = async (posts) => {
+            if (!communityPostList) return;
+            closeActivePostMenu();
+            communityPostList.innerHTML = '';
+            if (!posts || posts.length === 0) {
+                communityPostList.innerHTML = '<p class="text-gray-500 text-center py-4">등록된 글이 없습니다.</p>';
+                return;
+            }
+
+            for (const post of posts) {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-6 rounded-lg shadow-md';
+
+                const header = document.createElement('div');
+                header.className = 'flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3';
+                const leftBox = document.createElement('div');
+                const titleEl = document.createElement('h3');
+                titleEl.className = 'text-xl font-semibold text-gray-800';
+                titleEl.textContent = post.title || '제목 없음';
+                const authorInfo = document.createElement('p');
+                authorInfo.className = 'text-sm text-gray-500';
+                authorInfo.textContent = `작성자 ${post.authorName || '익명'}`;
+                leftBox.appendChild(titleEl);
+                leftBox.appendChild(authorInfo);
+
+                const rightBox = document.createElement('div');
+                rightBox.className = 'flex items-start gap-2 relative';
+                const dateEl = document.createElement('span');
+                dateEl.className = 'text-sm text-gray-500 whitespace-nowrap';
+                dateEl.textContent = formatDateTime(post.createdAt, true);
+                rightBox.appendChild(dateEl);
+
+                const user = auth.currentUser;
+                if (user && post.authorId === user.uid) {
+                    const menuWrapper = document.createElement('div');
+                    menuWrapper.className = 'relative';
+                    const menuBtn = document.createElement('button');
+                    menuBtn.type = 'button';
+                    menuBtn.className = 'text-gray-500 hover:text-gray-700 px-2';
+                    menuBtn.innerHTML = '&#8942;';
+                    const menu = document.createElement('div');
+                    menu.className = 'hidden absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-md shadow-lg z-20 text-sm text-left';
+                    menu.addEventListener('click', (e) => e.stopPropagation());
+                    const editBtn = document.createElement('button');
+                    editBtn.type = 'button';
+                    editBtn.className = 'block w-full px-4 py-2 hover:bg-gray-100 text-left';
+                    editBtn.textContent = '제목 편집';
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.type = 'button';
+                    deleteBtn.className = 'block w-full px-4 py-2 hover:bg-gray-100 text-left text-red-600';
+                    deleteBtn.textContent = '삭제';
+                    menu.appendChild(editBtn);
+                    menu.appendChild(deleteBtn);
+                    menuWrapper.appendChild(menuBtn);
+                    menuWrapper.appendChild(menu);
+                    rightBox.appendChild(menuWrapper);
+
+                    menuBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (activePostMenu && activePostMenu !== menu) {
+                            activePostMenu.classList.add('hidden');
+                        }
+                        const willOpen = menu.classList.contains('hidden');
+                        menu.classList.toggle('hidden');
+                        activePostMenu = willOpen ? menu : null;
+                    });
+
+                    editBtn.addEventListener('click', async () => {
+                        closeActivePostMenu();
+                        const newTitle = prompt('새 제목을 입력하세요', post.title || '');
+                        if (!newTitle || !newTitle.trim()) return;
+                        try {
+                            await updateDoc(doc(db, 'communityPosts', post.id), {
+                                title: newTitle.trim(),
+                                updatedAt: serverTimestamp()
+                            });
+                            showToast('제목을 수정했습니다.');
+                            loadCommunityPosts();
+                        } catch (error) {
+                            console.error('Error updating post title:', error);
+                        }
+                    });
+
+                    deleteBtn.addEventListener('click', async () => {
+                        closeActivePostMenu();
+                        if (!confirm('글을 삭제하시겠습니까?')) return;
+                        try {
+                            const commentsSnap = await getDocs(collection(db, 'communityPosts', post.id, 'comments'));
+                            await Promise.all(commentsSnap.docs.map(commentDoc => deleteDoc(commentDoc.ref)));
+                            await deleteDoc(doc(db, 'communityPosts', post.id));
+                            showToast('글이 삭제되었습니다.');
+                            loadCommunityPosts();
+                        } catch (error) {
+                            console.error('Error deleting post:', error);
+                        }
+                    });
+                }
+
+                header.appendChild(leftBox);
+                header.appendChild(rightBox);
+                card.appendChild(header);
+
+                const contentEl = document.createElement('p');
+                contentEl.className = 'mt-4 whitespace-pre-wrap text-gray-700';
+                contentEl.textContent = post.content || '';
+                card.appendChild(contentEl);
+
+                const commentsSection = document.createElement('div');
+                commentsSection.className = 'mt-6 border-t pt-4';
+                const commentsTitle = document.createElement('h4');
+                commentsTitle.className = 'font-semibold text-gray-800 mb-3';
+                commentsTitle.textContent = '댓글';
+                const commentsContainer = document.createElement('div');
+                commentsContainer.className = 'space-y-3';
+                commentsSection.appendChild(commentsTitle);
+                commentsSection.appendChild(commentsContainer);
+
+                await loadAndRenderComments(post.id, commentsContainer);
+
+                const commentForm = document.createElement('form');
+                commentForm.className = 'mt-4 space-y-2';
+                const commentTextarea = document.createElement('textarea');
+                commentTextarea.rows = 3;
+                commentTextarea.className = 'w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500';
+                commentTextarea.placeholder = '댓글을 입력하세요';
+                const commentSubmit = document.createElement('button');
+                commentSubmit.type = 'submit';
+                commentSubmit.className = 'px-4 py-2 bg-[#7A9D54] text-white rounded-md hover:bg-[#6a8a4a]';
+                commentSubmit.textContent = '등록';
+                commentForm.appendChild(commentTextarea);
+                commentForm.appendChild(commentSubmit);
+                commentForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const user = auth.currentUser;
+                    if (!user) return;
+                    const content = commentTextarea.value.trim();
+                    if (!content) return;
+                    try {
+                        await addDoc(collection(db, 'communityPosts', post.id, 'comments'), {
+                            content,
+                            authorId: user.uid,
+                            authorName: user.displayName || user.email,
+                            createdAt: serverTimestamp()
+                        });
+                        commentTextarea.value = '';
+                        await loadAndRenderComments(post.id, commentsContainer);
+                        showToast('댓글이 등록되었습니다.');
+                    } catch (error) {
+                        console.error('Error adding comment:', error);
+                    }
+                });
+
+                commentsSection.appendChild(commentForm);
+                card.appendChild(commentsSection);
+                communityPostList.appendChild(card);
+            }
+        };
+
+        const loadCommunityPosts = async (options = {}) => {
+            const { skipRender = false } = options;
+            try {
+                const postsRef = collection(db, 'communityPosts');
+                const snap = await getDocs(postsRef);
+                const posts = [];
+                snap.forEach(docSnap => posts.push({ id: docSnap.id, ...docSnap.data() }));
+                posts.sort((a, b) => (b.createdAt?.toMillis?.() || b.createdAt?.seconds || 0) - (a.createdAt?.toMillis?.() || a.createdAt?.seconds || 0));
+                communityPostsCache = posts;
+                updateHomeCommunitySection(posts);
+                if (skipRender) return;
+                const searchTerm = (communitySearchInput?.value || '').trim().toLowerCase();
+                let displayPosts = posts;
+                if (searchTerm) {
+                    displayPosts = posts
+                        .filter(post => (post.title || '').toLowerCase().includes(searchTerm))
+                        .sort((a, b) => (a.createdAt?.toMillis?.() || a.createdAt?.seconds || 0) - (b.createdAt?.toMillis?.() || b.createdAt?.seconds || 0));
+                }
+                await renderCommunityPosts(displayPosts);
+            } catch (error) {
+                console.error('Error loading community posts:', error);
+                if (!skipRender && communityPostList) {
+                    communityPostList.innerHTML = '<p class="text-red-500 text-center py-4">커뮤니티 글을 불러오지 못했습니다.</p>';
+                }
+            }
+        };
+
+        const fetchUserCollectionItems = async (type) => {
+            const user = auth.currentUser;
+            if (!user) return [];
+            const colRef = collection(db, 'users', user.uid, type);
+            const snap = await getDocs(query(colRef));
+            const items = [];
+            snap.forEach(docSnap => items.push({ id: docSnap.id, ...docSnap.data() }));
+            items.sort((a, b) => (b.createdAt?.toMillis?.() || b.createdAt?.seconds || 0) - (a.createdAt?.toMillis?.() || a.createdAt?.seconds || 0));
+            return items;
+        };
+
+        const refreshHomeSummaries = async () => {
+            const user = auth.currentUser;
+            if (!user) return;
+            try {
+                const [tables, letters] = await Promise.all([
+                    fetchUserCollectionItems('tables'),
+                    fetchUserCollectionItems('letters')
+                ]);
+                updateHomeTablesSection(tables);
+                updateHomeLettersSection(letters);
+            } catch (error) {
+                console.error('Home summary load error:', error);
+            }
+            await loadCommunityPosts({ skipRender: true });
+        };
 
         // --- TABLE GENERATOR LOGIC ---
         if (tableForm) {
@@ -1454,69 +2015,6 @@
             });
         }
 
-        // --- CHART LOGIC ---
-        const updateStatsChart = (plans) => {
-            const statsCanvas = document.getElementById('statsChart');
-            const chartContainer = document.getElementById('stats-chart-container');
-            const ctx = statsCanvas.getContext('2d');
-
-            if (statsChartInstance) {
-                statsChartInstance.destroy();
-                statsChartInstance = null;
-            }
-            
-            const existingMessage = chartContainer.querySelector('.no-data-message');
-            if (existingMessage) existingMessage.remove();
-            statsCanvas.style.display = 'block';
-
-            if (!plans || plans.length === 0) {
-                statsCanvas.style.display = 'none';
-                const noDataMessage = document.createElement('div');
-                noDataMessage.className = 'no-data-message text-center text-gray-500 flex items-center justify-center h-full';
-                noDataMessage.textContent = '생성된 계획서 없음';
-                chartContainer.appendChild(noDataMessage);
-                return;
-            }
-
-            const standardTypes = ['학교폭력 예방 교육 계획', '진로 체험 활동 계획', '디지털 리터러시 교육 계획', '기초학력 향상 지원 계획', '다문화 교육 활동 계획', '교육과정 운영계획'];
-            const stats = { '기타': 0 };
-            standardTypes.forEach(t => stats[t] = 0);
-
-            plans.forEach(plan => {
-                if (standardTypes.includes(plan.planType)) {
-                    stats[plan.planType]++;
-                } else {
-                    stats['기타']++;
-                }
-            });
-
-            const chartData = Object.values(stats).filter(count => count > 0);
-            const chartLabels = Object.keys(stats).filter(type => stats[type] > 0);
-            
-            const shortLabels = chartLabels.map(label => {
-                if(label === '기타') return '기타';
-                if(label.includes(' ')) return label.split(' ')[0];
-                return label;
-            });
-
-            statsChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: shortLabels,
-                    datasets: [{
-                        label: '계획서 종류',
-                        data: chartData,
-                        backgroundColor: ['#7A9D54', '#A8C292', '#E0A75E', '#F1DDBF', '#D4A5A5', '#8B9A46', '#C6A9A3'],
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { padding: 15, font: { family: "'Noto Sans KR', sans-serif" } } } }
-                }
-            });
-        };
-
         // --- FIRESTORE & DATA HANDLING ---
         const loadAndDisplayPlans = async () => {
             const user = auth.currentUser;
@@ -1532,8 +2030,8 @@
                     plans.push({ id: doc.id, ...doc.data() });
                 });
 
-                plans.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-                updateStatsChart(plans);
+                plans.sort((a, b) => (b.createdAt?.toMillis?.() || b.createdAt?.seconds || 0) - (a.createdAt?.toMillis?.() || a.createdAt?.seconds || 0));
+                updateHomePlansSection(plans);
 
                 const populateList = (container, planList) => {
                     container.innerHTML = '';
@@ -1556,13 +2054,20 @@
                                 <button class="delete-plan-btn text-sm font-medium text-red-600 hover:underline" data-id="${plan.id}">삭제</button>
                             </div>
                         `;
-                        container.appendChild(planElement);
-                    });
-                };
-                
+                    container.appendChild(planElement);
+                });
+            };
+
+                const searchTerm = (planSearchInput?.value || '').trim().toLowerCase();
+                const filteredPlans = searchTerm
+                    ? plans
+                        .filter(plan => (plan.title || '').toLowerCase().includes(searchTerm))
+                        .sort((a, b) => (a.createdAt?.toMillis?.() || a.createdAt?.seconds || 0) - (b.createdAt?.toMillis?.() || b.createdAt?.seconds || 0))
+                    : plans;
+
                 populateList(recentPlansList, plans.slice(0, 5));
                 if (planSavedList) {
-                    populateList(planSavedList, plans);
+                    populateList(planSavedList, filteredPlans);
                 }
 
                 document.querySelectorAll('.view-plan-btn').forEach(button => {
@@ -1638,7 +2143,6 @@
                 console.error("Error loading plans:", error);
                 recentPlansList.innerHTML = `<p class="text-red-500 text-center py-4">계획서를 불러오는 중 오류가 발생했습니다.</p>`;
                 if (planSavedList) planSavedList.innerHTML = `<p class="text-red-500 text-center py-4">계획서를 불러오는 중 오류가 발생했습니다.</p>`;
-                updateStatsChart([]);
             }
         };
 
@@ -1651,19 +2155,37 @@
                 const snap = await getDocs(q);
                 const items = [];
                 snap.forEach((doc) => items.push({ id: doc.id, ...doc.data() }));
-                items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                items.sort((a, b) => (b.createdAt?.toMillis?.() || b.createdAt?.seconds || 0) - (a.createdAt?.toMillis?.() || a.createdAt?.seconds || 0));
+
+                if (type === 'tables') updateHomeTablesSection(items);
+                if (type === 'letters') updateHomeLettersSection(items);
+
                 container.innerHTML = '';
                 if (items.length === 0) {
                     container.innerHTML = `<p class="text-gray-500 text-center py-4">저장된 항목이 없습니다.</p>`;
                     return;
                 }
-                items.forEach(item => {
+
+                const searchInput = type === 'tables' ? tableSearchInput : type === 'officials' ? officialSearchInput : type === 'letters' ? letterSearchInput : null;
+                const searchTerm = (searchInput?.value || '').trim().toLowerCase();
+                const displayItems = searchTerm
+                    ? items
+                        .filter(item => (item.title || '').toLowerCase().includes(searchTerm))
+                        .sort((a, b) => (a.createdAt?.toMillis?.() || a.createdAt?.seconds || 0) - (b.createdAt?.toMillis?.() || b.createdAt?.seconds || 0))
+                    : items;
+
+                if (displayItems.length === 0) {
+                    container.innerHTML = `<p class="text-gray-500 text-center py-4">검색 결과가 없습니다.</p>`;
+                    return;
+                }
+
+                displayItems.forEach(item => {
                     const el = document.createElement('div');
                     el.className = 'p-4 border rounded-md hover:bg-gray-50 transition-colors flex justify-between items-center';
                     el.innerHTML = `
                         <div>
                             <p class="font-semibold">${item.title}</p>
-                            <p class="text-sm text-gray-500">생성일: ${item.createdAt ? new Date(item.createdAt.toDate()).toLocaleDateString() : '날짜 없음'}</p>
+                            <p class="text-sm text-gray-500">생성일: ${item.createdAt ? formatDateTime(item.createdAt, false) : '날짜 없음'}</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <button class="rename-item-btn text-sm font-medium text-green-600 hover:underline" data-id="${item.id}">수정</button>
