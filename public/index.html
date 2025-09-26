@@ -1205,14 +1205,14 @@
                 let prompt = `다음 기안문 예시를 참고하여 기안문을 작성해줘.\n예시:\n${officialDocExamples}\n\n주제: ${topic}`;
                 if (agency || docNumber || date) prompt += `\n근거: ${agency}-${docNumber}(${date})`;
                 if (attachments.length) prompt += `\n첨부파일: ${attachments.join(', ')}`;
-                prompt += `\n형식:\n제목 ${topic}\n1. 관련: [근거]\n2. ${topic}을 반영한 내용`;
+                prompt += `\n형식:\n제목 ${topic}\n1. 관련: [근거]\n   - 괄호 안 날짜는 'YYYY.M.D.' 형식으로 끝에 마침표를 포함해 작성해\n2. ${topic}을 반영한 내용`;
                 if (attachments.length > 1) {
                     const attachmentList = attachments
                         .map((a, idx) => `${idx + 1}. ${a} 1부.`)
                         .join('\n      ');
-                    prompt += `\n\n붙임  ${attachmentList} 끝.`;
+                    prompt += `\n\n붙임  ${attachmentList}  끝.`;
                 } else if (attachments.length === 1) {
-                    prompt += `\n\n붙임 ${attachments[0]} 1부. 끝.`;
+                    prompt += `\n\n붙임  ${attachments[0]} 1부.  끝.`;
                 } else {
                     prompt += `\n\n끝.`;
                 }
@@ -1222,7 +1222,7 @@
                 }
                 prompt += ` 제목은 첫 줄에만 작성해. 추가 설명 없이 마크다운으로 작성해.`;
                 prompt += ` 항목은 항상 '1.', '2.'와 같이 숫자 목록 형식으로 작성하고, 불릿 기호는 사용하지 마.`;
-                prompt += ` '붙임' 다음에는 두 칸을 띄우고, '끝.'은 항상 빈 줄을 하나 두고 단독으로 작성해.`;
+                prompt += ` '붙임' 다음에는 두 칸을 띄우고, 같은 줄에서 두 칸을 띄운 뒤 '끝.'으로 마무리해.`;
 
                 try {
                     const response = await fetch('/.netlify/functions/generatePlan', {
@@ -2173,6 +2173,21 @@
                 .replace(/'/g, '&#39;');
         }
 
+        function formatReferenceDate(value = '') {
+            const trimmed = (value || '').trim();
+            if (!trimmed) return '';
+            const dateMatch = trimmed.match(/(\d{4})\D*(\d{1,2})\D*(\d{1,2})/);
+            if (dateMatch) {
+                const year = dateMatch[1];
+                const monthNum = parseInt(dateMatch[2], 10);
+                const dayNum = parseInt(dateMatch[3], 10);
+                if (!Number.isNaN(monthNum) && !Number.isNaN(dayNum)) {
+                    return `${year}.${monthNum}.${dayNum}.`;
+                }
+            }
+            return trimmed;
+        }
+
         function formatOfficialMarkdown(markdown = '') {
             const lines = (markdown || '').split('\n');
             const formatted = [];
@@ -2188,25 +2203,32 @@
                 }
 
                 const handleEndLine = () => {
-                    if (formatted.length && formatted[formatted.length - 1] !== '') {
-                        formatted.push('');
+                    if (insideAttachments && formatted.length) {
+                        const lastIdx = formatted.length - 1;
+                        const lastLine = formatted[lastIdx];
+                        if (/^\s*붙임\s{2}/.test(lastLine) && !/끝\.$/.test(lastLine)) {
+                            formatted[lastIdx] = `${lastLine}  끝.`.trimEnd();
+                            insideAttachments = false;
+                            return;
+                        }
                     }
                     formatted.push(`${indent}끝.`.trimEnd());
                     insideAttachments = false;
                 };
 
                 if (/^붙임/.test(trimmed)) {
-                    insideAttachments = true;
                     let rest = trimmed.replace(/^붙임\s*[:\-]?\s*/, '');
-                    let hasEnding = false;
-                    if (/끝\.$/.test(rest)) {
+                    const hasEnding = /끝\.$/.test(rest);
+                    if (hasEnding) {
                         rest = rest.replace(/끝\.$/, '').trimEnd();
-                        hasEnding = true;
                     }
                     const baseLine = rest ? `${indent}붙임  ${rest}` : `${indent}붙임  `;
-                    formatted.push(baseLine.trimEnd());
                     if (hasEnding) {
-                        handleEndLine();
+                        formatted.push(`${baseLine}  끝.`.trimEnd());
+                        insideAttachments = false;
+                    } else {
+                        formatted.push(baseLine.trimEnd());
+                        insideAttachments = true;
                     }
                     return;
                 }
@@ -2234,7 +2256,13 @@
                     const numberMatch = trimmed.match(/^(\d+)\.\s*/);
                     if (numberMatch) {
                         numbering = parseInt(numberMatch[1], 10) + 1;
-                        const content = trimmed.slice(numberMatch[0].length).trimStart();
+                        let content = trimmed.slice(numberMatch[0].length).trimStart();
+                        if (numberMatch[1] === '1' && /^관련\s*:/.test(content)) {
+                            content = content.replace(/\(([^)]*?)\)/, (match, inner) => {
+                                const formattedDate = formatReferenceDate(inner);
+                                return formattedDate ? `(${formattedDate})` : match;
+                            });
+                        }
                         formatted.push(`${indent}${numberMatch[1]}. ${content}`.trimEnd());
                         return;
                     }
