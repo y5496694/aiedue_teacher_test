@@ -15,7 +15,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+    const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest';
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const response = await fetch(apiUrl, {
       method: 'POST',
