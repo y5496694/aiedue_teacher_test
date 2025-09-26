@@ -2643,6 +2643,10 @@
         function displayContent(rawText, defaultPlanType, summaryMarkdown = null) {
             let content = rawText;
 
+            if (initialMessage) {
+                initialMessage.classList.add('hidden');
+            }
+
             const titleMatch = content.match(/^TITLE:\s*(.*)/m);
             const mainTitle = titleMatch && titleMatch[1] ? titleMatch[1].trim() : defaultPlanType;
             if (titleMatch) {
