@@ -499,6 +499,8 @@
         const letterView = document.getElementById('letter-view');
         const recentPlansList = document.getElementById('recent-plans-list');
         const form = document.getElementById('plan-form');
+        const GEMINI_MODEL = 'gemini-1.5-flash-latest';
+
         const generateBtn = document.getElementById('generate-btn');
         const initialMessage = document.getElementById('initial-message');
         const loadingIndicator = document.getElementById('loading-indicator');
@@ -832,7 +834,7 @@
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt })
+                        body: JSON.stringify({ prompt, model: GEMINI_MODEL })
                     });
                     const result = await response.json();
                     if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -902,7 +904,7 @@
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt })
+                        body: JSON.stringify({ prompt, model: GEMINI_MODEL })
                     });
                     const result = await response.json();
                     if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -1174,7 +1176,7 @@
                         const parseRes = await fetch('/.netlify/functions/generatePlan', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ prompt: parsePrompt })
+                            body: JSON.stringify({ prompt: parsePrompt, model: GEMINI_MODEL })
                         });
                         const parseResult = await parseRes.json();
                         const text = parseResult.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -1221,7 +1223,7 @@
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt })
+                        body: JSON.stringify({ prompt, model: GEMINI_MODEL })
                     });
                     const result = await response.json();
                     if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -1318,7 +1320,7 @@
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt })
+                        body: JSON.stringify({ prompt, model: GEMINI_MODEL })
                     });
                     const result = await response.json();
                     if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -1359,7 +1361,7 @@
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt })
+                        body: JSON.stringify({ prompt, model: GEMINI_MODEL })
                     });
                     const result = await response.json();
                     if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -1426,7 +1428,7 @@
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt })
+                        body: JSON.stringify({ prompt, model: GEMINI_MODEL })
                     });
                     const result = await response.json();
                     if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -1913,7 +1915,7 @@
                 const response = await fetch(apiUrl, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ prompt: prompt }) 
+                    body: JSON.stringify({ prompt: prompt, model: GEMINI_MODEL })
                 });
 
                 if (!response.ok) {
@@ -2604,7 +2606,7 @@
                 const response = await fetch('/.netlify/functions/generatePlan', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt })
+                    body: JSON.stringify({ prompt, model: GEMINI_MODEL })
                 });
                 const result = await response.json();
                 const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -2679,7 +2681,7 @@ async function saveCurrentPlan() {
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt })
+                        body: JSON.stringify({ prompt, model: GEMINI_MODEL })
                     });
                     const result = await response.json();
                     const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -2789,7 +2791,7 @@ async function saveCurrentPlan() {
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt })
+                        body: JSON.stringify({ prompt, model: GEMINI_MODEL })
                     });
                     const result = await response.json();
                     const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -2882,7 +2884,7 @@ async function saveCurrentPlan() {
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt })
+                        body: JSON.stringify({ prompt, model: GEMINI_MODEL })
                     });
                     const result = await response.json();
                     const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -3003,7 +3005,7 @@ async function saveCurrentPlan() {
                     const response = await fetch('/.netlify/functions/generatePlan', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt })
+                        body: JSON.stringify({ prompt, model: GEMINI_MODEL })
                     });
                     const result = await response.json();
                     const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
