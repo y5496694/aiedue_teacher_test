@@ -1,28 +1,158 @@
 import { useMemo, useState } from 'react';
 import Head from 'next/head';
 
-const CATEGORIES = ['계획서/표', '가정통신문', '커뮤니티'];
+const CATEGORIES = ['운영계획', '가정통신문', '기안문', '커뮤니티'];
 
 const RESOURCE_DATA = {
-  '계획서/표': [
-    { id: 1, title: '1학기 학급 운영 계획서', description: '학급 운영 목표와 활동 계획을 정리한 문서입니다.' },
-    { id: 2, title: '월별 수업 계획표', description: '월별 주제 및 학습 목표를 정리한 표입니다.' },
-    { id: 3, title: '학부모 상담 일정표', description: '학부모 상담 일정을 정리하여 공유합니다.' },
-    { id: 4, title: '프로젝트 학습 시나리오', description: '학생 주도 프로젝트 진행을 위한 시나리오입니다.' },
-    { id: 5, title: '체험학습 일정 및 준비물', description: '체험학습 일정과 준비물을 정리한 안내문입니다.' },
-    { id: 6, title: '학급 행사 계획표', description: '한 해 동안의 학급 행사 계획을 정리했습니다.' },
-    { id: 7, title: '주간 수업안 템플릿', description: '주간 수업안을 작성하기 위한 템플릿입니다.' },
-    { id: 8, title: '프로그램 운영 체크리스트', description: '수업 프로그램 운영 시 확인해야 할 항목들입니다.' },
+  운영계획: [
+    {
+      id: 1,
+      title: '1학기 학급 운영 계획서',
+      description: '학급 운영 목표와 활동 계획을 정리한 문서입니다.',
+      createdAt: new Date('2024-01-05T09:00:00'),
+    },
+    {
+      id: 2,
+      title: '월별 수업 계획표',
+      description: '월별 주제 및 학습 목표를 정리한 표입니다.',
+      createdAt: new Date('2024-02-01T08:30:00'),
+    },
+    {
+      id: 3,
+      title: '학부모 상담 일정표',
+      description: '학부모 상담 일정을 정리하여 공유합니다.',
+      createdAt: new Date('2024-02-15T13:15:00'),
+    },
+    {
+      id: 4,
+      title: '프로젝트 학습 시나리오',
+      description: '학생 주도 프로젝트 진행을 위한 시나리오입니다.',
+      createdAt: new Date('2024-03-02T10:45:00'),
+    },
+    {
+      id: 5,
+      title: '체험학습 일정 및 준비물',
+      description: '체험학습 일정과 준비물을 정리한 안내문입니다.',
+      createdAt: new Date('2024-03-18T09:20:00'),
+    },
+    {
+      id: 6,
+      title: '학급 행사 계획표',
+      description: '한 해 동안의 학급 행사 계획을 정리했습니다.',
+      createdAt: new Date('2024-04-01T11:00:00'),
+    },
+    {
+      id: 7,
+      title: '주간 수업안 템플릿',
+      description: '주간 수업안을 작성하기 위한 템플릿입니다.',
+      createdAt: new Date('2024-04-08T08:50:00'),
+    },
+    {
+      id: 8,
+      title: '프로그램 운영 체크리스트',
+      description: '수업 프로그램 운영 시 확인해야 할 항목들입니다.',
+      createdAt: new Date('2024-04-15T09:10:00'),
+    },
   ],
-  '가정통신문': [
-    { id: 1, title: '4월 가정통신문', description: '4월 학사 일정과 안내 사항을 담았습니다.' },
-    { id: 2, title: '독서 활동 안내', description: '가정에서 진행 가능한 독서 활동을 안내합니다.' },
-    { id: 3, title: '학부모 상담 안내', description: '상담 일정과 신청 방법을 안내합니다.' },
-    { id: 4, title: '방학 생활 계획표', description: '방학 중 학생 생활을 위한 계획표입니다.' },
-    { id: 5, title: '안전 교육 안내', description: '학교 안전 교육과 협조 사항을 안내합니다.' },
-    { id: 6, title: '수학여행 안내', description: '수학여행 일정과 준비 사항을 안내합니다.' },
-    { id: 7, title: '온라인 학습 가이드', description: '온라인 학습 이용 가이드를 담았습니다.' },
-    { id: 8, title: '학부모 연수 안내', description: '학부모 대상 연수 프로그램 안내문입니다.' },
+  가정통신문: [
+    {
+      id: 1,
+      title: '4월 가정통신문',
+      description: '4월 학사 일정과 안내 사항을 담았습니다.',
+      createdAt: new Date('2024-03-25T08:00:00'),
+    },
+    {
+      id: 2,
+      title: '독서 활동 안내',
+      description: '가정에서 진행 가능한 독서 활동을 안내합니다.',
+      createdAt: new Date('2024-04-02T07:45:00'),
+    },
+    {
+      id: 3,
+      title: '학부모 상담 안내',
+      description: '상담 일정과 신청 방법을 안내합니다.',
+      createdAt: new Date('2024-04-10T09:30:00'),
+    },
+    {
+      id: 4,
+      title: '방학 생활 계획표',
+      description: '방학 중 학생 생활을 위한 계획표입니다.',
+      createdAt: new Date('2024-04-18T12:00:00'),
+    },
+    {
+      id: 5,
+      title: '안전 교육 안내',
+      description: '학교 안전 교육과 협조 사항을 안내합니다.',
+      createdAt: new Date('2024-04-25T09:05:00'),
+    },
+    {
+      id: 6,
+      title: '수학여행 안내',
+      description: '수학여행 일정과 준비 사항을 안내합니다.',
+      createdAt: new Date('2024-05-03T08:40:00'),
+    },
+    {
+      id: 7,
+      title: '온라인 학습 가이드',
+      description: '온라인 학습 이용 가이드를 담았습니다.',
+      createdAt: new Date('2024-05-10T09:50:00'),
+    },
+    {
+      id: 8,
+      title: '학부모 연수 안내',
+      description: '학부모 대상 연수 프로그램 안내문입니다.',
+      createdAt: new Date('2024-05-15T13:25:00'),
+    },
+  ],
+  기안문: [
+    {
+      id: 1,
+      title: '학교안전 점검 계획 기안',
+      description: '학교 시설 안전 점검 계획 수립을 위한 기안문입니다.',
+      createdAt: new Date('2024-02-22T09:00:00'),
+    },
+    {
+      id: 2,
+      title: '교내 체육대회 운영 기안',
+      description: '체육대회 일정과 운영 방안을 담은 기안문입니다.',
+      createdAt: new Date('2024-03-05T10:20:00'),
+    },
+    {
+      id: 3,
+      title: '도서관 환경 개선 기안',
+      description: '도서관 환경 개선을 위한 예산 및 추진 계획 기안문입니다.',
+      createdAt: new Date('2024-03-19T11:10:00'),
+    },
+    {
+      id: 4,
+      title: '방과후 프로그램 신설 기안',
+      description: '새로운 방과후 프로그램 운영을 위한 기안문입니다.',
+      createdAt: new Date('2024-04-07T09:35:00'),
+    },
+    {
+      id: 5,
+      title: '정보화 기기 교체 기안',
+      description: '노후 정보화 기기의 교체를 위한 기안문입니다.',
+      createdAt: new Date('2024-04-21T08:55:00'),
+    },
+    {
+      id: 6,
+      title: '학교 축제 운영 기안',
+      description: '학교 축제 준비와 운영 계획을 정리한 기안문입니다.',
+      createdAt: new Date('2024-05-02T14:05:00'),
+    },
+    {
+      id: 7,
+      title: '체험학습 버스 대절 기안',
+      description: '체험학습 이동을 위한 버스 대절 요청 기안문입니다.',
+      createdAt: new Date('2024-05-09T09:15:00'),
+    },
+    {
+      id: 8,
+      title: '환경미화 용품 구입 기안',
+      description: '학교 환경미화를 위한 용품 구입 기안문입니다.',
+      createdAt: new Date('2024-05-17T10:45:00'),
+    },
   ],
 };
 
@@ -86,8 +216,25 @@ export default function Home() {
   const [editingPostId, setEditingPostId] = useState(null);
   const [commentDrafts, setCommentDrafts] = useState({});
   const [editingComment, setEditingComment] = useState(null);
+  const [searchQueries, setSearchQueries] = useState({});
 
   const resources = useMemo(() => RESOURCE_DATA, []);
+  const activeSearchQuery = searchQueries[activeCategory] || '';
+  const filteredResources = useMemo(() => {
+    const items = resources[activeCategory] ?? [];
+    const query = activeSearchQuery.trim().toLowerCase();
+    if (!query) {
+      return items;
+    }
+    return [...items]
+      .filter((resource) => resource.title.toLowerCase().includes(query))
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }, [resources, activeCategory, activeSearchQuery]);
+
+  const handleSearchChange = (event) => {
+    const { value } = event.target;
+    setSearchQueries((prev) => ({ ...prev, [activeCategory]: value }));
+  };
 
   const handleOpenProfileModal = () => {
     setIsProfileModalOpen(true);
@@ -305,16 +452,33 @@ export default function Home() {
           </div>
 
           {activeCategory !== '커뮤니티' ? (
-            <div className="resource-grid">
-              {resources[activeCategory]?.map((resource) => (
-                <article key={resource.id} className="resource-card">
-                  <h3 className="resource-card__title">{resource.title}</h3>
-                  <p className="resource-card__description">{resource.description}</p>
-                  <button type="button" className="resource-card__button">
-                    자세히 보기
-                  </button>
-                </article>
-              ))}
+            <div className="resources">
+              <div className="resource-search">
+                <input
+                  type="search"
+                  placeholder="제목으로 검색하세요"
+                  value={activeSearchQuery}
+                  onChange={handleSearchChange}
+                />
+              </div>
+              {filteredResources.length > 0 ? (
+                <div className="resource-grid">
+                  {filteredResources.map((resource) => (
+                    <article key={resource.id} className="resource-card">
+                      <div className="resource-card__header">
+                        <h3 className="resource-card__title">{resource.title}</h3>
+                        <span className="resource-card__date">{formatDate(resource.createdAt)}</span>
+                      </div>
+                      <p className="resource-card__description">{resource.description}</p>
+                      <button type="button" className="resource-card__button">
+                        자세히 보기
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className="resource-empty">검색어와 일치하는 자료가 없습니다.</p>
+              )}
             </div>
           ) : (
             <div className="community">
@@ -629,6 +793,29 @@ export default function Home() {
           color: #274cb3;
         }
 
+        .resources {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .resource-search input {
+          width: 100%;
+          padding: 0.85rem 1.1rem;
+          border-radius: 0.75rem;
+          border: 1px solid #d4dbe8;
+          background-color: #f8faff;
+          font-size: 0.95rem;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .resource-search input:focus {
+          outline: none;
+          border-color: #366ae2;
+          box-shadow: 0 0 0 4px rgba(54, 106, 226, 0.1);
+          background-color: #fff;
+        }
+
         .resource-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -645,11 +832,24 @@ export default function Home() {
           gap: 0.75rem;
         }
 
+        .resource-card__header {
+          display: flex;
+          justify-content: space-between;
+          gap: 0.75rem;
+          align-items: flex-start;
+        }
+
         .resource-card__title {
           margin: 0;
           font-size: 1rem;
           font-weight: 700;
           color: #1d2b4f;
+        }
+
+        .resource-card__date {
+          color: #5f6c7b;
+          font-size: 0.85rem;
+          white-space: nowrap;
         }
 
         .resource-card__description {
@@ -667,6 +867,16 @@ export default function Home() {
           color: #fff;
           font-weight: 600;
           cursor: pointer;
+        }
+
+        .resource-empty {
+          margin: 0;
+          padding: 3rem 0;
+          text-align: center;
+          color: #5f6c7b;
+          border: 1px dashed #d4dbe8;
+          border-radius: 1rem;
+          background-color: #f8faff;
         }
 
         .community {
